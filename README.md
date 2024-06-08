@@ -5,7 +5,7 @@ CPM is displayed on the transmitters ssd1306 OLED display and CPM is also transm
 receiver ESP32 to read remotely.
 
 
-![plot](./)
+![plot](./DSC_0000_BURST20240608185435562.JPG)
 
 
 Requirements:
