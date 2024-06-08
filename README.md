@@ -22,3 +22,5 @@ Requirements:
 1x HW-508 sound module.
 
 1x WS2812 RGB LED.
+
+2x SSD1306 128x64 OLED modules.
