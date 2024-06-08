@@ -8,7 +8,9 @@ CPM is displayed on the transmitters ssd1306 OLED display and CPM is also transm
 receiver ESP32 to read remotely for remote observation.
 
 Rad requires a sixty second warm up to aquire precion CPM.
+
 Max reading is currently around 10240 due to memory limitation pertaining to the way Rad calculates CPM.
+
 Extremely sensitive to sunlight unless geiger muller tube is covered. 
 
 
