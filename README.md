@@ -7,8 +7,8 @@ This system does not estimate CPM, instead CPM values are updated as rapidly as 
 CPM is displayed on the transmitters ssd1306 OLED display and CPM is also transmitted over RF24 intended for the
 receiver ESP32 to read remotely for remote observation.
 
-Rad needs a 60 second warm up before actual CPM can be attained unlike other systems that estimate CPM by multiplying
-(counts) by (log_period / 60 seconds).
+Rad needs a 60 second warm up to aquire precion CPM and this system is sensitive to sunlight because it is extremely
+sensitive.
 
 
 ![plot](./DSC_0000_BURST20240608185435562.JPG)
