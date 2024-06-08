@@ -7,8 +7,9 @@ This system does not estimate CPM, instead CPM values are updated as rapidly as 
 CPM is displayed on the transmitters ssd1306 OLED display and CPM is also transmitted over RF24 intended for the
 receiver ESP32 to read remotely for remote observation.
 
-Rad needs a 60 second warm up to aquire precion CPM and this system is sensitive to sunlight because it is extremely
-sensitive.
+Rad requires a sixty second warm up to aquire precion CPM.
+Max reading is currently around 10240 due to memory limitation pertaining to the way Rad calculates CPM.
+Extremely sensitive to sunlight unless geiger muller tube is covered. 
 
 
 ![plot](./DSC_0000_BURST20240608185435562.JPG)
