@@ -9,7 +9,7 @@ further check formulaic results again with 'straight count 60' mode: no formulas
 	- pure 60s counter
 	- record results
 	- once a minute, compare results to results recorded from the inversely proportional time window version
-	- if necessary, experiment with taking the average between N lowest slows and N lowest highs (currently average is of N highest highs)
+	- if necessary, experiment with taking the average between N lowest lows and N lowest highs (currently average is of N highest highs)
 	- compare results again
 	- experiment more if necessary
 
