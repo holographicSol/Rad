@@ -18,6 +18,8 @@ Extremely sensitive to sunlight unless geiger muller tube is covered.
 Requires system remains on. If the system looses power then you have at least sixty seconds before precision CPM can
 be updated.
 
+Micro second precision.
+
 
 ![plot](./DSC_0000_BURST20240608185435562.JPG)
 
