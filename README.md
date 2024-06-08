@@ -35,3 +35,7 @@ Requirements:
 1x WS2812 RGB LED.
 
 2x SSD1306 128x64 OLED modules.
+
+
+The CPM Burst Guage may be isolated and then integrated into Rad to provide a reasonably accurate estimated CPM for the
+sixty second warmup period, after which Rad no longer needs to estimate.
