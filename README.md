@@ -1,5 +1,6 @@
 # Rad
 An embedded system guiger counter.
+This system does not estimate CPM, instead CPM values are updated as rapidly as the system can manage (clock speed).
 
 
 Requirements:
