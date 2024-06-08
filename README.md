@@ -2,6 +2,8 @@
 
 An embedded system guiger counter.
 
+Measures true zero, background, low and high radioactivity.
+
 
 This system does not estimate CPM, instead CPM values are updated as rapidly as the system can manage (clock speed).
 CPM is displayed on the transmitters ssd1306 OLED display and CPM is also transmitted over RF24 intended for the
