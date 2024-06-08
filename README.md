@@ -4,6 +4,10 @@ This system does not estimate CPM, instead CPM values are updated as rapidly as 
 CPM is displayed on the transmitters ssd1306 OLED display and CPM is also transmitted over RF24 intended for the
 receiver ESP32 to read remotely.
 
+
+![plot](./)
+
+
 Requirements:
 
 2x ESP32 Dev Modules.
