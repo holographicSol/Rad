@@ -180,7 +180,7 @@ void loop(){
   // running at, which as mentioned is inversely proportional to the time window in which the CPM Burst Guage can count radiaion activity.
   // The final cpm value is updated on the OLED and sent to the client over RF.
   // When comparing results of this method to simply counting over exactly 60 seconds, I have found the final cpm value resulting from
-  // the CPM Burst Guage to be accurately comparable to a simple.
+  // the CPM Burst Guage to be accurately comparable but certainly not precise.
 
   ui.update();
 
