@@ -41,3 +41,5 @@ Requirements:
 
 The CPM Burst Guage may be isolated and then integrated into Rad to provide a reasonably accurate estimated CPM for the
 sixty second warmup period, after which Rad no longer needs to estimate.
+
+Bug Arduino Micros() resets to zero after a period of time making all stored micros eternally non stale: update in progress
