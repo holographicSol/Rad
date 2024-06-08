@@ -30,7 +30,7 @@ Requirements:
 
 2x NRF24L01+PA+LNA Wireless Transceivers.
 
-1x Assembled Radiation Detector System.
+1x Assembled Radiation Detector System. In this case RadiationD-v1.1(CAJOE).
 
 1x HW-508 sound module.
 
