@@ -1,4 +1,6 @@
 // Wriiten by Benjamin Jack Cullen
+// This version estimates CPM by using my CPM Burst Guage. For precision CPM see Rad.
+// Although CPM is estimated, estimated CPM from the burst guage is surprisingly accurate.
 
 // Include the correct display library
 // For a connection via I2C using Wire include
