@@ -13,7 +13,7 @@ Max reading is currently around 10240 due to memory limitation pertaining to the
 
 Extremely sensitive to sunlight unless geiger muller tube is covered. 
 
-Requires system remains on, if the system looses power then you have at least sixty seconds before precision CPM can
+Requires system remains on. If the system looses power then you have at least sixty seconds before precision CPM can
 be updated.
 
 
