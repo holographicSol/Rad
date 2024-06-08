@@ -17,7 +17,7 @@ further check formulaic results again with 'straight count 60' mode: no formulas
 
 	- typical estimated values of CPM usually between 8 CPM and 12 CPM indoors at current location.
 
-	- pure 60s readings indoors at current location (precision every 60s - as precise as the hardware (esp32) can support, which we can measure in 		  time):
+	- pure 60s readings indoors at current location (precision every 60s - as precise as the hardware (esp32) can support, which we can measure in time):
 	60s: 16 CPM
 	60s: 12 CPM
 	60s: 10 CPM
