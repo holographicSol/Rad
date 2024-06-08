@@ -1,0 +1,13 @@
+Transmitter:
+	Measures true zero.
+	Measures low and slow.
+	Measures high and fast.
+	Displays CPM and uSv/h.
+	Transmits CPM to the receiver where the CPM can be observed remotely.
+
+
+Receiver:
+	Receives CPM from transmitter.
+	Displays CPM and uSv/h.
+	Receives counts as their happening, from transmitter.
+	Displays each count on an LED and plays a click for each count on its own speaker.

@@ -1,0 +1,70 @@
+
+before new features:
+
+clean and simplify code.
+
+organise output.
+
+further check formulaic results again with 'straight count 60' mode: no formulas, pure counts per minute, output values refresh once per minute
+	- pure 60s counter
+	- record results
+	- once a minute, compare results to results recorded from the inversely proportional time window version
+	- if necessary, experiment with taking the average between N lowest slows and N lowest highs (currently average is of N highest highs)
+	- compare results again
+	- experiment more if necessary
+
+	INDOORS:
+
+	- typical estimated values of CPM usually between 8 CPM and 12 CPM indoors at current location.
+
+	- pure 60s readings indoors at current location (precision every 60s - as precise as the hardware (esp32) can support, which we can measure in 		  time):
+	60s: 16 CPM
+	60s: 12 CPM
+	60s: 10 CPM
+	60s: 12 CPM
+	60s: 13 CPM
+	60s: 16 CPM
+	60s: 12 CPM
+	60s: 17 CPM
+	60s: 18 CPM
+	60s: 10 CPM
+	60s: 10 CPM
+	60ss: 8 CPM
+	60s: 17 CPM
+	60s: 18 CPM
+	60s: 19 CPM
+	60s: 8  CPM
+	60s: 8  CPM
+	60s: 5  CPM
+	60s: 12 CPM
+	60s: 7  CPM
+	60s: 18 CPM
+	60s: 14 CPM
+	60s: 10 CPM
+	60s: 14 CPM
+
+	- results per minute conclude that indoors, the CPM Burst Guage actually provides a reasonable estimation of the actual current CPM,
+	  results also show that the CPM Burst Guage is not precise which is to be expected because the burst guage estimates while the pure 
+	  counter actually counts counts every 60 seconds.
+
+	Conclusion (predicated upon indoor results):
+		Estimated values from the CPM Burst are valuable and can be very accurate but it will probably not be precise.
+		Estimation Pro: Hits in the ball park accurately on a cold boot (immediately).
+		Essimation Con: Although cpm is in the ballpark, cpm is not precise.
+
+		Therefore: Estimation has its place because it can be extremely accurate however if precision is preferred then a 60 second
+			   warmup should be applied and then each period of time (according to the required precision) should be deducted along
+			   with any counts that occured during that period of time, before calculating the 'actual' CPM.
+			   Pros: Precision to the degree hardware will allow.
+			   Cons: Requires a 60 second warmup and must remain ON in order to maintain precision without requiring another 60 second
+				 warmup.
+	
+	outdoors:
+
+	- typical outdoor estimated readings in current location using the CPM Burst Guage range between 8 CPM and 70CPM.
+	- the question is 'How does it scale?': how do the reults from the indoor ESTIMATED readings vs indoor PRECISION readings SCALE 	    	  	  commpared to outdoor ESTIMATED (CPM Burst Guage) readings vs outdoor PRECISION readings.
+	- Next: measure outdoors with the pure 60 second counter.
+
+
+
+	
