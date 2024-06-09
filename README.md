@@ -42,6 +42,8 @@ Requirements:
 
 2x SSD1306 128x64 OLED modules.
 
+1x DS3231 High Precision RTC.
+
 
 The CPM Burst Guage may be isolated and then integrated into Rad to provide a reasonably accurate estimated CPM for the
 sixty second warmup period, after which Rad no longer needs to estimate.
