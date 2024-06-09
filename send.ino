@@ -66,12 +66,12 @@ struct GCStruct {
   unsigned long precisionCPM = 0;     // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
   char precisionCPM_str[12];
   float precisioncUSVH = 0;                       // stores the micro-Sievert/hour for units of radiation dosing
-  unsigned long maxPeriod = 60;                   // maximum logging period in microseconds. Should always be 60,000,000 for one minute
+  unsigned long maxPeriod = 60;                   // maximum logging period in seconds (microseconds). Should always be 60 (60,000,000 for one minute)
   unsigned long currentMicrosMain;                // stores current
   unsigned long previousMicrosMain;               // stores previous
   unsigned long precisionMicros;                  // stores main loop time
   unsigned long currentMicrosStateTransmission;   // stores current
-  unsigned long previousMicrosStateTransmission;  // stores previous
+  unsigned long previousMicrosStateTransmission;  // stores previousc:\Benjamin\Documents\Projects\Arduino\GCESP32_0000017_precision\send\send.ino
   char precisionMicros_str[12];                   // stores main loop time
   unsigned long currentPecisionMicros;
 };
