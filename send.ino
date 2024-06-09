@@ -66,12 +66,12 @@ struct TimeStruct {
   unsigned long microsI;
   char microsStr[56];
   char unixtStr[56];
-  unsigned long currentTime;                          // a placeholder for a current time
-  unsigned long previousTime;                         // a placeholder for a previous time
+  unsigned long currentTime;                          // a placeholder for a current time (optionally used)
+  unsigned long previousTime;                         // a placeholder for a previous time (optionally used)
   unsigned long microLoopTimeTaken;                   // necessary to count time less than a second (must be updated every loop of main)
   unsigned long microLoopTimeStart;                   // necessary for loop time taken (must be recorded every loop of main)
   unsigned long microAccumulator;                     // accumulates loop time take and resets at threshold (must accumulate every loop of main)
-  unsigned long microAccumulatorThreshold = 1000000;  // micro accumulator resets to zero when the threshold is reached
+  unsigned long microAccumulatorThreshold = 1000000;  // micro accumulator resets to zero when the threshold is reached (10^6 or any other number say if you dont need current time)
 };
 TimeStruct timeData;
 
@@ -81,7 +81,6 @@ unsigned long current_UNIX_MICRO_TIME() {
   dtostrf(time.unixtime(), 0, 4, timeData.unixtStr);
   strcpy(timeData.UNIX_MICRO_TIME, timeData.unixtStr);
 
-  // timeData.microsI = (unsigned long)micros();
   if (timeData.microAccumulator < (timeData.microAccumulatorThreshold - timeData.microLoopTimeTaken - 1)) { timeData.microAccumulator+=timeData.microLoopTimeTaken; }
   else { timeData.microAccumulator = 0; }
   timeData.microsI = timeData.microAccumulator;
