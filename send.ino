@@ -206,7 +206,7 @@ void loop() {
   for (int i = 0; i < max_count; i++) {
     if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
       // updateTime();
-      if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) { // <-- becomes always true (fix)
+      if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
         geigerCounter.countsArray[i] = 0; // set expired counters to zero
         }
       else {
