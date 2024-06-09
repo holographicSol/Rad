@@ -190,8 +190,6 @@ void loop() {
   // refresh ssd1306 128x64 display
   ui.update();
 
-  // -----------------------------------------------------------------------------------------------------------------------------------------
-
   // record impulse from interrupt once per loop instead of overloading ISR. means we want a fast loop eg: us1000(currently) = upto 1000 impulses
   // recorded a second. up to 1000 timestamps at current loop speeds multiplied by 60 seconds (60,000 timestamps) means we also need to throttle
   // our max reading to something safe like countsArray[10240]. to get the most out of this sketch we would need more memory and a maybe even a
@@ -227,8 +225,6 @@ void loop() {
   }
   memset(geigerCounter.countsArray, 0, sizeof(geigerCounter.countsArray));
   memcpy(geigerCounter.countsArray, geigerCounter.countsArrayTemp, sizeof(geigerCounter.countsArray));
-
-  // -----------------------------------------------------------------------------------------------------------------------------------------
 
   // then calculate usv/h
   geigerCounter.precisionCPM = geigerCounter.precisionCounts;
