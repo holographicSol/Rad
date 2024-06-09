@@ -75,7 +75,7 @@ struct TimeStruct {
 };
 TimeStruct timeData;
 
-// concatinates unix time and micros. the concatinated values will be different in later updates, namely micros as micros currently is.
+// concatinates unix time and micros.
 unsigned long current_UNIX_MICRO_TIME() {
   DateTime time = rtc.now();
   dtostrf(time.unixtime(), 0, 4, timeData.unixtStr);
