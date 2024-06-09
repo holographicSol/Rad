@@ -216,6 +216,7 @@ void loop() {
   for (int i = 0; i < max_count; i++) {
     if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
       if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
+        geigerCounter.countsArray[i] = 0;
         }
       else {
         geigerCounter.precisionCounts++; // non expired counters increment the precision counter
