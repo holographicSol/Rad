@@ -24,7 +24,7 @@ RF24 radio(CE_PIN, CSN_PIN);
 SSD1306Wire display(0x3c, SDA, SCL);
 OLEDDisplayUi ui(&display);
 
-int virt_overflow = 0;
+char serialBuffer[16];
 
 // Radio Addresses
 uint64_t address[6] = { 0x7878787878LL,
@@ -222,9 +222,6 @@ void loop() {
   geigerCounter.precisionCPM = geigerCounter.precisionCounts;
   geigerCounter.precisioncUSVH = geigerCounter.precisionCPM * 0.00332;
 
-  // store time taken to complete
-  timeData.microLoopTimeTaken = micros() - timeData.microLoopTimeStart;
-
   // transmit the resultss
   memset(payload.message, 0, 12);
   memset(geigerCounter.precisionCPM_str, 0, 12);
@@ -232,4 +229,7 @@ void loop() {
   memcpy(payload.message, geigerCounter.precisionCPM_str, sizeof(geigerCounter.precisionCPM_str));
   payload.payloadID = 1111;
   radio.write(&payload, sizeof(payload));
+
+  // store time taken to complete
+  timeData.microLoopTimeTaken = micros() - timeData.microLoopTimeStart;
 }
