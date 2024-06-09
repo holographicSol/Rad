@@ -20,6 +20,10 @@ be updated.
 
 Micro second precision.
 
+If Precision time is us500 (microseconds) as on my ESP32, then the main loop is able to register up to 1xCount from
+the geiger counter and remove N counts from countsArray in 500 microseconds. Precision time may increase/decrease
+according to current CPM because countsArray will take longer to process.
+
 
 ![plot](./DSC_0000_BURST20240608185435562.JPG)
 
