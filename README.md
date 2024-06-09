@@ -30,7 +30,7 @@ according to current CPM because countsArray will take longer to process.
 
 Requirements:
 
-2x ESP32 Dev Modules.
+2x KEYESTUDIO ESP32 WROOM Development Board
 
 2x NRF24L01+PA+LNA Wireless Transceivers.
 
