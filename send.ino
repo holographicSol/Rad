@@ -34,18 +34,6 @@ uint64_t address[6] = { 0x7878787878LL,
                         0xB3B4B5B60FLL,
                         0xB3B4B5B605LL };
 
-struct TimeStruct {
-  unsigned long UNIX_MICRO_TIME_I;
-  unsigned long PREVIOUS_UNIX_MICRO_TIME_I;
-  char UNIX_MICRO_TIME[100];
-  char PREVIOUS_UNIX_MICRO_TIME[100];
-  unsigned long microsI;
-  char microsStr[56];
-  char unixtStr[56];
-};
-TimeStruct timeData;
-
-
 // Transmission Payload
 struct PayloadStruct {
   unsigned long nodeID;
@@ -67,26 +55,42 @@ struct GCStruct {
   char precisionCPM_str[12];
   float precisioncUSVH = 0;                       // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60;                   // maximum logging period in seconds (microseconds). Should always be 60 (60,000,000 for one minute)
-  unsigned long currentMicrosMain;                // stores current
-  unsigned long previousMicrosMain;               // stores previous
-  unsigned long precisionMicros;                  // stores main loop time
-  unsigned long currentMicrosStateTransmission;   // stores current
-  unsigned long previousMicrosStateTransmission;  // stores previousc:\Benjamin\Documents\Projects\Arduino\GCESP32_0000017_precision\send\send.ino
-  char precisionMicros_str[12];                   // stores main loop time
-  unsigned long currentPecisionMicros;
 };
 GCStruct geigerCounter;
 
-void updateTime() {
+struct TimeStruct {
+  unsigned long UNIX_MICRO_TIME_I;
+  unsigned long PREVIOUS_UNIX_MICRO_TIME_I;
+  char UNIX_MICRO_TIME[100];
+  char PREVIOUS_UNIX_MICRO_TIME[100];
+  unsigned long microsI;
+  char microsStr[56];
+  char unixtStr[56];
+  unsigned long currentTime;                          // a placeholder for a current time
+  unsigned long previousTime;                         // a placeholder for a previous time
+  unsigned long microLoopTimeTaken;                   // necessary to count time less than a second (must be updated every loop of main)
+  unsigned long microLoopTimeStart;                   // necessary for loop time taken (must be recorded every loop of main)
+  unsigned long microAccumulator;                     // accumulates loop time take and resets at threshold (must accumulate every loop of main)
+  unsigned long microAccumulatorThreshold = 1000000;  // micro accumulator resets to zero when the threshold is reached
+};
+TimeStruct timeData;
+
+// concatinates unix time and micros. the concatinated values will be different in later updates, namely micros as micros currently is.
+unsigned long current_UNIX_MICRO_TIME() {
   DateTime time = rtc.now();
   dtostrf(time.unixtime(), 0, 4, timeData.unixtStr);
   strcpy(timeData.UNIX_MICRO_TIME, timeData.unixtStr);
-  timeData.microsI = (unsigned long)micros();
+
+  // timeData.microsI = (unsigned long)micros();
+  if (timeData.microAccumulator < (timeData.microAccumulatorThreshold - timeData.microLoopTimeTaken - 1)) { timeData.microAccumulator+=timeData.microLoopTimeTaken; }
+  else { timeData.microAccumulator = 0; }
+  timeData.microsI = timeData.microAccumulator;
   dtostrf(timeData.microsI, 0, 0, timeData.microsStr);
+  
   strcat(timeData.UNIX_MICRO_TIME, timeData.microsStr);
   timeData.UNIX_MICRO_TIME_I = atoi(timeData.UNIX_MICRO_TIME);
   // store time
-  geigerCounter.currentMicrosMain = timeData.UNIX_MICRO_TIME_I;
+  return timeData.UNIX_MICRO_TIME_I;
 }
 
 // subprocedure for capturing events from Geiger Kit
@@ -100,11 +104,11 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   if (geigerCounter.warmup == true) {
     display->drawString(0, 0, "Precision: pending");
   } else {
-    display->drawString(0, 0, "Precision: " + String(geigerCounter.precisionMicros));
+    display->drawString(0, 0, "Precision: " + String(timeData.microLoopTimeTaken));
   }
-  display->drawString(0, 15, "CPM:    " + String(geigerCounter.precisionCPM));
+  display->drawString(0, 15, "CPM:   " + String(geigerCounter.precisionCPM));
   display->drawString(0, 25, "uSv/h:  " + String(geigerCounter.precisioncUSVH));
-  display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (geigerCounter.currentMicrosMain - geigerCounter.previousMicrosMain)));
+  display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
 }
 
 // this array keeps function pointers to all frames are the single views that slide in
@@ -170,12 +174,15 @@ void setup() {
 
 void loop() {
 
-  updateTime();
-  geigerCounter.currentPecisionMicros = micros();
+  // set current timestamp to be used this loop as UNIXTIME+MICROSECONDTIME. this is not actual time like a clock.
+  timeData.currentTime = current_UNIX_MICRO_TIME();
+  
+  // store current time in micros to measure this loop time so we know how quickly items are added/removed from counts arrays
+  timeData.microLoopTimeStart = micros();
 
-  // reset counts every minute (60 million micro seconds)
-  if ((geigerCounter.currentMicrosMain - geigerCounter.previousMicrosMain) > geigerCounter.maxPeriod) {
-    geigerCounter.previousMicrosMain = geigerCounter.currentMicrosMain;
+  // reset counts every minute
+  if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
+    timeData.previousTime = timeData.currentTime;
     geigerCounter.counts = 0;      // resets every 60 seconds
     geigerCounter.warmup = false;  // completed 60 second warmup required for precision
   }
@@ -186,7 +193,7 @@ void loop() {
   // if input add current micros to geigerCounter so that we can remove it when max period has expired
   if (geigerCounter.impulse == true) {
     geigerCounter.impulse = false;
-    geigerCounter.countsArray[geigerCounter.counts] = geigerCounter.currentMicrosMain;  // add count to array as micros
+    geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros
     // transmit counts seperately so that the receiver(s) can behave like the actual geiger counter
     memset(payload.message, 0, 12);
     memcpy(payload.message, "X", 1);
@@ -200,7 +207,7 @@ void loop() {
   for (int i = 0; i < max_count; i++) {
     if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
       // updateTime();
-      if (((geigerCounter.currentMicrosMain - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) { // <-- becomes always true (fix)
+      if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) { // <-- becomes always true (fix)
         geigerCounter.countsArray[i] = 0; // set expired counters to zero
         }
       else {
@@ -217,7 +224,7 @@ void loop() {
   geigerCounter.precisioncUSVH = geigerCounter.precisionCPM * 0.00332;
 
   // store time taken to complete
-  geigerCounter.precisionMicros = micros() - geigerCounter.currentPecisionMicros;
+  timeData.microLoopTimeTaken = micros() - timeData.microLoopTimeStart;
 
   // transmit the resultss
   memset(payload.message, 0, 12);
