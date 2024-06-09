@@ -171,6 +171,7 @@ void setup() {
   attachInterrupt(GEIGER_PIN, tube_impulse, FALLING);  //define external interrupts
 }
 
+
 void loop() {
 
   // set current timestamp to be used this loop as UNIXTIME+MICROSECONDTIME. this is not actual time like a clock.
@@ -189,10 +190,21 @@ void loop() {
   // refresh ssd1306 128x64 display
   ui.update();
 
-  // if input add current micros to geigerCounter so that we can remove it when max period has expired
+  // -----------------------------------------------------------------------------------------------------------------------------------------
+
+  // record impulse from interrupt once per loop instead of overloading ISR. means we want a fast loop eg: us1000(currently) = upto 1000 impulses
+  // recorded a second. up to 1000 timestamps at current loop speeds multiplied by 60 seconds (60,000 timestamps) means we also need to throttle
+  // our max reading to something safe like countsArray[10240]. to get the most out of this sketch we would need more memory and a maybe even a
+  // faster processor for these current methods.
+  // each loop adds up to 1 impulse to countsArray and will remove all expired impulses from countsArray.
+
+  // check if impulse
   if (geigerCounter.impulse == true) {
     geigerCounter.impulse = false;
+
+    // add the impulse as a timestamp to array
     geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros
+
     // transmit counts seperately so that the receiver(s) can behave like the actual geiger counter
     memset(payload.message, 0, 12);
     memcpy(payload.message, "X", 1);
@@ -200,14 +212,12 @@ void loop() {
     radio.write(&payload, sizeof(payload));
   }
 
-  // precision guage relies on a 60s warmup after which we can begin removing expired counts from the array
-  geigerCounter.precisionCounts = 0;  // reset precision counter
+  // step through the array and remove expired impulses by exluding them from our new array
+  geigerCounter.precisionCounts = 0;
   memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
   for (int i = 0; i < max_count; i++) {
     if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
-      // updateTime();
       if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-        geigerCounter.countsArray[i] = 0; // set expired counters to zero
         }
       else {
         geigerCounter.precisionCounts++; // non expired counters increment the precision counter
@@ -217,6 +227,8 @@ void loop() {
   }
   memset(geigerCounter.countsArray, 0, sizeof(geigerCounter.countsArray));
   memcpy(geigerCounter.countsArray, geigerCounter.countsArrayTemp, sizeof(geigerCounter.countsArray));
+
+  // -----------------------------------------------------------------------------------------------------------------------------------------
 
   // then calculate usv/h
   geigerCounter.precisionCPM = geigerCounter.precisionCounts;
