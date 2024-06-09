@@ -1,6 +1,6 @@
 # Rad
 
-An embedded system guiger counter.
+A remote embedded system guiger counter.
 
 Measures true zero, background, low and high radioactivity.
 
