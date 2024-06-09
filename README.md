@@ -25,7 +25,7 @@ the geiger counter and remove N counts from countsArray in 500 microseconds. Pre
 according to current CPM because countsArray will take longer to process.
 
 
-![plot](./DSC_0000_BURST20240608185435562.JPG)
+![plot](./Rad.JPG)
 
 
 Requirements:
