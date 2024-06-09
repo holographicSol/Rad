@@ -75,7 +75,7 @@ struct TimeStruct {
 };
 TimeStruct timeData;
 
-// concatinates unix time and micros.
+// concatinates unix time and micros to make timestamps. requires loop time taken and accuracy and resolution is predicated upon loop time.
 unsigned long current_UNIX_MICRO_TIME() {
   DateTime time = rtc.now();
   dtostrf(time.unixtime(), 0, 4, timeData.unixtStr);
