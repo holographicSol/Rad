@@ -79,6 +79,7 @@ struct TimeStruct {
 TimeStruct timeData;
 
 // concatinates unix time and micros to make timestamps. requires loop time taken and accuracy and resolution is predicated upon loop time.
+// TODO: finally nudge rtc time to be inline with micros
 double current_UNIX_MICRO_TIME() {
   DateTime time = rtc.now();
   dtostrf((unsigned long)time.unixtime(), 0, 0, timeData.unixtStr);
@@ -202,7 +203,7 @@ void loop() {
     geigerCounter.impulse = false;
 
     // add the impulse as a timestamp to array
-    geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros
+    geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros    TOD: replace counts with another method of indexing
 
     // transmit counts seperately so that the receiver(s) can behave like the actual geiger counter
     memset(payload.message, 0, 12);
