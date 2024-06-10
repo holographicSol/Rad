@@ -190,72 +190,78 @@ void setup() {
 
 
 void loop() {
-
+  
   // set current timestamp to be used this loop as UNIXTIME+MICROSECONDTIME. this is not actual time like a clock.
   timeData.currentTime = current_SUBSECOND_UNIXTIME();
   
   // store current time in micros to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.microLoopTimeStart = micros();
+  
+  // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
+  if (geigerCounter.precisionCounts < 10240-1) {
 
-  // reset counts every minute
-  if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
-    Serial.print("cycle expired: "); Serial.println(timeData.currentTime, 12);
-    timeData.previousTime = timeData.currentTime;
-    geigerCounter.counts = 0;      // resets every 60 seconds
-    geigerCounter.warmup = false;  // completed 60 second warmup required for precision
-  }
-
-  // record impulse from interrupt once per loop instead of overloading ISR. means we want a fast loop eg: us1000(currently) = upto 1000 impulses
-  // recorded a second. up to 1000 timestamps at current loop speeds multiplied by 60 seconds (60,000 timestamps) means we also need to throttle
-  // our max CPM reading to something safe like countsArray[10240]. to get the most out of this sketch we would need more memory and maybe even a
-  // faster processor, and of course a higher resolution clock than the DS3231 High Precision RTC. for limited access to better hardware,
-  // (ideally medical/military grade) this sketch would benefit from having the CPM Burst Guage built into it for breaches of upper CPM limits
-  // and for the first 60 seconds after a cold boot, this way very cheaply there is a surprising degree of precision within a range of CPM
-  // currently defined mostly by the hardware limitations of this project on the ESP32 despite its high operating frequencies.
-  //
-  // ToDo: define conditions for activating the cpm burst guage. if doing so then display ESTIMATING somewhere on the oled:
-  //       - first 60 seconds.
-  //       - near upper cpm threshold (hardware specific)
-  //       - precision time becomes too high (may coincide with very high cpm and or a nearing upper cpm threshold because there will be more to process)
-  //
-  // each main loop adds up to 1 impulse to countsArray and will remove all expired impulses from countsArray.
-
-  // check if impulse
-  if (geigerCounter.impulse == true) {
-    geigerCounter.impulse = false;
-
-    // add the impulse as a timestamp to array
-    if (geigerCounter.precisionCounts < 10240-1) {
-      geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros    TOD: replace counts with another method of indexing
+    // reset counts every minute
+    if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
+      Serial.print("cycle expired: "); Serial.println(timeData.currentTime, 12);
+      timeData.previousTime = timeData.currentTime;
+      geigerCounter.counts = 0;      // resets every 60 seconds
+      geigerCounter.warmup = false;  // completed 60 second warmup required for precision
     }
 
-    // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
-    memset(payload.message, 0, 12);
-    memcpy(payload.message, "X", 1);
-    payload.payloadID = 1000;
-    radio.write(&payload, sizeof(payload));
-  }
+    // record impulse from interrupt once per loop instead of overloading ISR. means we want a fast loop eg: us1000(currently) = upto 1000 impulses
+    // recorded a second. up to 1000 timestamps at current loop speeds multiplied by 60 seconds (60,000 timestamps) means we also need to throttle
+    // our max CPM reading to something safe like countsArray[10240]. to get the most out of this sketch we would need more memory and maybe even a
+    // faster processor, and of course a higher resolution clock than the DS3231 High Precision RTC. for limited access to better hardware,
+    // (ideally medical/military grade) this sketch would benefit from having the CPM Burst Guage built into it for breaches of upper CPM limits
+    // and for the first 60 seconds after a cold boot, this way very cheaply there is a surprising degree of precision within a range of CPM
+    // currently defined mostly by the hardware limitations of this project on the ESP32 despite its high operating frequencies.
+    //
+    // ToDo: define conditions for activating the cpm burst guage. if doing so then display ESTIMATING somewhere on the oled:
+    //       - first 60 seconds.
+    //       - near upper cpm threshold (hardware specific)
+    //       - precision time becomes too high (may coincide with very high cpm and or a nearing upper cpm threshold because there will be more to process)
+    //
+    // each main loop adds up to 1 impulse to countsArray and will remove all expired impulses from countsArray.
 
-  // step through the array and remove expired impulses by exluding them from our new array.
-  geigerCounter.precisionCounts = 0;
-  memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
-  for (int i = 0; i < max_count; i++) {
-    if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
-      if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-        geigerCounter.countsArray[i] = 0;
+    // check if impulse
+    if (geigerCounter.impulse == true) {
+      geigerCounter.impulse = false;
+
+      // add the impulse as a timestamp to array
+      geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros    TOD: replace counts with another method of indexing
+
+      // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
+      memset(payload.message, 0, 12);
+      memcpy(payload.message, "X", 1);
+      payload.payloadID = 1000;
+      radio.write(&payload, sizeof(payload));
+    }
+
+    // step through the array and remove expired impulses by exluding them from our new array.
+    geigerCounter.precisionCounts = 0;
+    memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
+    for (int i = 0; i < max_count; i++) {
+      if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
+        if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
+          geigerCounter.countsArray[i] = 0;
+          }
+        else {
+          geigerCounter.precisionCounts++; // non expired counters increment the precision counter
+          geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i];  // non expired counters go into the new temporary array
         }
-      else {
-        geigerCounter.precisionCounts++; // non expired counters increment the precision counter
-        geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i];  // non expired counters go into the new temporary array
       }
     }
-  }
-  memset(geigerCounter.countsArray, 0, sizeof(geigerCounter.countsArray));
-  memcpy(geigerCounter.countsArray, geigerCounter.countsArrayTemp, sizeof(geigerCounter.countsArray));
+    memset(geigerCounter.countsArray, 0, sizeof(geigerCounter.countsArray));
+    memcpy(geigerCounter.countsArray, geigerCounter.countsArrayTemp, sizeof(geigerCounter.countsArray));
 
-  // then calculate usv/h
-  geigerCounter.precisionCPM = geigerCounter.precisionCounts;
-  geigerCounter.precisioncUSVH = geigerCounter.precisionCPM * 0.00332;
+    // then calculate usv/h
+    geigerCounter.precisionCPM = geigerCounter.precisionCounts;
+    geigerCounter.precisioncUSVH = geigerCounter.precisionCPM * 0.00332;
+  
+  // cpm burst guage (estimates cpm reactively)
+  else {
+    // insert my cpm burst guage
+  }
 
   // transmit the resultss
   memset(payload.message, 0, 12);
