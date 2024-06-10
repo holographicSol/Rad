@@ -138,17 +138,22 @@ void tube_impulse() {
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   if (geigerCounter.GCMODE == 2) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
-    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM) + " cpm");
-    display->drawString(display->getWidth()/2, 28, String(geigerCounter.uSvh) + " uSv/h");
-    // display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
+
+    if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+    // else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
+    display->drawString(display->getWidth()/2, 26, "cpm");
+    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
+    display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
+    display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
   }
   else if (geigerCounter.GCMODE == 3) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
-    display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
-    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM) + " cpm");
-    display->drawString(display->getWidth()/2, 28, String(geigerCounter.uSvh) + " uSv/h");
-    // display->drawString(0, 35, "Epoch: " + String(geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD - (geigerCounter.currentMillis - geigerCounter.previousMillis)));
+    if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+    // else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
+    display->drawString(display->getWidth()/2, 26, "cpm");
+    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
+    display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
+    display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
   }
 }
 
