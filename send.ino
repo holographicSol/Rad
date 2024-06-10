@@ -108,7 +108,7 @@ double current_SUBSECOND_UNIXTIME() {
   timeData.microsStr[0] = timeData.microsStrTag[0]; // put a period at the beginning of our new string
   strcat(timeData.microsStr, timeData.microsStrTmp); // copy micros into new string after the period
   strcat(timeData.UNIX_MICRO_TIME, timeData.microsStr); // concatinate unix time with new string that looks suspiciously like a double
-  timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME); // make the string an actual double
+  // timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME); // make the string an actual double
   Serial.print("UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
   return timeData.UNIX_MICRO_TIME_I;
 }
