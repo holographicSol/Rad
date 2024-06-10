@@ -54,9 +54,9 @@ struct GCStruct {
   bool warmup = true;                 // sets false after first 60 seconds have passed
   unsigned long counts;               // stores counts and resets to zero every minute
   unsigned long precisionCounts = 0;  // stores how many elements are in counts array
-  unsigned long precisionCPM = 0;     // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
-  char precisionCPM_str[12];
-  float precisioncUSVH = 0;           // stores the micro-Sievert/hour for units of radiation dosing
+  unsigned long CPM = 0;              // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
+  char CPM_str[12];
+  float uSvh = 0;                     // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60;       // maximum logging period in seconds (microseconds). Should always be 60 (60,000,000 for one minute)
   unsigned long CPM_BURST_GUAGE_LOG_PERIOD = 15000; //Logging period in milliseconds, recommended value 15000-60000.
   unsigned long CPM_BURST_GUAGE_MAX_PERIOD = 60000; //Maximum logging period without modifying this sketch. default 60000.
@@ -139,15 +139,15 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   if (geigerCounter.GCMODE == 2) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
-    display->drawString(display->getWidth()/2, 13, String(geigerCounter.precisionCPM));
-    display->drawString(display->getWidth()/2, 28, String(geigerCounter.precisioncUSVH));
+    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
+    display->drawString(display->getWidth()/2, 28, String(geigerCounter.uSvh));
     // display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
   }
   else if (geigerCounter.GCMODE == 3) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
-    display->drawString(display->getWidth()/2, 15, String(geigerCounter.precisionCPM));
-    display->drawString(display->getWidth()/2, 25, String(geigerCounter.precisioncUSVH));
+    display->drawString(display->getWidth()/2, 15, String(geigerCounter.CPM));
+    display->drawString(display->getWidth()/2, 25, String(geigerCounter.uSvh));
     // display->drawString(0, 35, "Epoch: " + String(geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD - (geigerCounter.currentMillis - geigerCounter.previousMillis)));
   }
 }
@@ -268,8 +268,8 @@ void loop() {
     memcpy(geigerCounter.countsArray, geigerCounter.countsArrayTemp, sizeof(geigerCounter.countsArray));
 
     // then calculate usv/h
-    geigerCounter.precisionCPM = geigerCounter.precisionCounts;
-    geigerCounter.precisioncUSVH = geigerCounter.precisionCPM * 0.00332;
+    geigerCounter.CPM = geigerCounter.precisionCounts;
+    geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
   }
   
   // cpm burst guage (estimates cpm reactively)
@@ -284,16 +284,16 @@ void loop() {
       geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = (unsigned long)(geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD);
     }
     // store highs and lows
-    if (geigerCounter.precisionCPM > geigerCounter.cpm_high) {geigerCounter.cpm_high = geigerCounter.precisionCPM;};
-    if ((geigerCounter.precisionCPM < geigerCounter.cpm_low) && (geigerCounter.precisionCPM >= 1)) {geigerCounter.cpm_low = geigerCounter.precisionCPM;};
+    if (geigerCounter.CPM > geigerCounter.cpm_high) {geigerCounter.cpm_high = geigerCounter.CPM;};
+    if ((geigerCounter.CPM < geigerCounter.cpm_low) && (geigerCounter.CPM >= 1)) {geigerCounter.cpm_low = geigerCounter.CPM;};
     // check the variable time window
     geigerCounter.currentMillis = millis();
     if(geigerCounter.currentMillis - geigerCounter.previousMillis > geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD){
       geigerCounter.previousMillis = geigerCounter.currentMillis;
       geigerCounter.multiplier = geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD / geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD; // calculating multiplier, depend on your log period
       geigerCounter.multiplier = (unsigned int)(geigerCounter.multiplier);
-      geigerCounter.precisionCPM = geigerCounter.counts * geigerCounter.multiplier; /// multiply cpm by 0.003321969697 for geiger muller tube J305
-      geigerCounter.precisioncUSVH = geigerCounter.precisionCPM * 0.00332;
+      geigerCounter.CPM = geigerCounter.counts * geigerCounter.multiplier; /// multiply cpm by 0.003321969697 for geiger muller tube J305
+      geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
       int i;
       float sum = 0;
       if (geigerCounter.cpm_arr_itter <= geigerCounter.cpm_arr_max) {geigerCounter.cpms[geigerCounter.cpm_arr_itter]=geigerCounter.cpm_high; Serial.println("[" + String(geigerCounter.cpm_arr_itter) + "] " + String(geigerCounter.cpms[geigerCounter.cpm_arr_itter])); geigerCounter.cpm_arr_itter++;}
@@ -303,7 +303,7 @@ void loop() {
         geigerCounter.cpm_average = sum/3.0;
         geigerCounter.cpm_average = (long int)geigerCounter.cpm_average;
         Serial.println("cpm_average: " + String(geigerCounter.cpm_average));
-        geigerCounter.precisioncUSVH = geigerCounter.cpm_average * 0.00332;
+        geigerCounter.uSvh = geigerCounter.cpm_average * 0.00332;
         geigerCounter.cpm_high=0; geigerCounter.cpm_low=0; geigerCounter.cpm_arr_itter = 0;
       }
     geigerCounter.counts = 0;
@@ -315,9 +315,9 @@ void loop() {
 
     // transmit the resultss
   memset(payload.message, 0, 12);
-  memset(geigerCounter.precisionCPM_str, 0, 12);
-  dtostrf(geigerCounter.precisionCPM, 0, 4, geigerCounter.precisionCPM_str);
-  memcpy(payload.message, geigerCounter.precisionCPM_str, sizeof(geigerCounter.precisionCPM_str));
+  memset(geigerCounter.CPM_str, 0, 12);
+  dtostrf(geigerCounter.CPM, 0, 4, geigerCounter.CPM_str);
+  memcpy(payload.message, geigerCounter.CPM_str, sizeof(geigerCounter.CPM_str));
   payload.payloadID = 1111;
   radio.write(&payload, sizeof(payload));
 
