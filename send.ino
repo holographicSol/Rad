@@ -71,6 +71,7 @@ struct GCStruct {
   float cpm_average;
   int GCMODE = 2;
   signed long previousCounts;
+  unsigned long countsIter;
 };
 GCStruct geigerCounter;
 
@@ -233,27 +234,39 @@ void loop() {
   // if (geigerCounter.precisionCounts < 10240-1) {
   if (geigerCounter.GCMODE == 2) {
 
+    //#########################################################################################################################################################################
+
     // reset counts every minute
     if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
       Serial.print("cycle expired: "); Serial.println(timeData.currentTime, 12);
       timeData.previousTime = timeData.currentTime;
-      geigerCounter.counts = 0;      // resets every 60 seconds
+      // geigerCounter.counts = 0;      // resets every 60 seconds
       geigerCounter.warmup = false;  // completed 60 second warmup required for precision
     }
+
+    //#########################################################################################################################################################################
+
     // check if impulse
     if (geigerCounter.impulse == true) {
       geigerCounter.impulse = false;
 
       // add the impulse as a timestamp to array providing we think we have enough memory
-      if (geigerCounter.precisionCounts < max_count-1) {
-        geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros
+      for (int i = 0; i < geigerCounter.counts; i++) {
+        if (geigerCounter.precisionCounts < max_count-1) {
+          geigerCounter.countsArray[geigerCounter.countsIter] = timeData.currentTime;  // add count to array as micros
+          if (geigerCounter.countsIter < max_count-1) {geigerCounter.countsIter++;}
+          else {geigerCounter.countsIter=0;}
+        }
       }
+      geigerCounter.counts = 0; // resets every 60 seconds
 
       // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
       memset(payload.message, 0, 12);
       memcpy(payload.message, "X", 1);
       payload.payloadID = 1000;
       radio.write(&payload, sizeof(payload));
+
+    //#########################################################################################################################################################################
     }
     // step through the array and remove expired impulses by exluding them from our new array.
     geigerCounter.precisionCounts = 0;
@@ -278,6 +291,8 @@ void loop() {
     geigerCounter.CPM = geigerCounter.precisionCounts;
     geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
   }
+
+  //###########################################################################################################################################################################
   
   // cpm burst guage (estimates cpm reactively)
   else if (geigerCounter.GCMODE == 3) {
