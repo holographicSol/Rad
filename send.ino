@@ -76,7 +76,7 @@ struct TimeStruct {
   unsigned long microAccumulator;                     // accumulates loop time take and resets at threshold (must accumulate every loop of main)
   unsigned long microAccumulatorThreshold = 1000000;  // micro accumulator resets to zero when the threshold is reached (10^6 or any other number say if you dont need current time)
   double microseconds = 0;
-  unsigned long microMultiplier = 1;
+  unsigned long microMultiplier = 0;
   int previousSecond = 0;
   char microsStrTag[4] = ".";
 };
@@ -109,7 +109,7 @@ double current_SUBSECOND_UNIXTIME() {
   strcat(timeData.microsStr, timeData.microsStrTmp); // copy micros into new string after the period
   strcat(timeData.UNIX_MICRO_TIME, timeData.microsStr); // concatinate unix time with new string that looks suspiciously like a double
   timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME); // make the string an actual double
-  // Serial.print("UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
+  Serial.print("UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
   return timeData.UNIX_MICRO_TIME_I;
 }
 
