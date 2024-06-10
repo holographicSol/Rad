@@ -215,8 +215,8 @@ void loop() {
   //
   // ToDo: define conditions for activating the cpm burst guage. if doing so then display ESTIMATING somewhere on the oled:
   //       - first 60 seconds.
-  //       - breach of upper cpm threshold (hardware specific)
-  //       - precision time becomes too high (may coincide with very high cpm and or a breach of upper cpm threshold because there will be more to process)
+  //       - near upper cpm threshold (hardware specific)
+  //       - precision time becomes too high (may coincide with very high cpm and or a nearing upper cpm threshold because there will be more to process)
   //
   // each main loop adds up to 1 impulse to countsArray and will remove all expired impulses from countsArray.
 
