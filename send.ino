@@ -139,15 +139,15 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   if (geigerCounter.GCMODE == 2) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
-    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
-    display->drawString(display->getWidth()/2, 28, String(geigerCounter.uSvh));
+    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM) + " cpm");
+    display->drawString(display->getWidth()/2, 28, String(geigerCounter.uSvh) + " uSv/h");
     // display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
   }
   else if (geigerCounter.GCMODE == 3) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
-    display->drawString(display->getWidth()/2, 15, String(geigerCounter.CPM));
-    display->drawString(display->getWidth()/2, 25, String(geigerCounter.uSvh));
+    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM) + " cpm");
+    display->drawString(display->getWidth()/2, 28, String(geigerCounter.uSvh) + " uSv/h");
     // display->drawString(0, 35, "Epoch: " + String(geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD - (geigerCounter.currentMillis - geigerCounter.previousMillis)));
   }
 }
