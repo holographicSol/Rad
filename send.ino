@@ -245,7 +245,7 @@ void loop() {
       geigerCounter.impulse = false;
 
       // add the impulse as a timestamp to array providing we think we have enough memory
-      if (geigerCounter.precisionCounts < max_count) {
+      if (geigerCounter.precisionCounts < max_count-1) {
         geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros
       }
 
