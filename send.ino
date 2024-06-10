@@ -141,7 +141,7 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
 
     if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
     // else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
-    display->drawString(display->getWidth()/2, 26, "cpm");
+    display->drawString(display->getWidth()/2, 25, "cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
     display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
     display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
@@ -150,7 +150,7 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
     // else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
-    display->drawString(display->getWidth()/2, 26, "cpm");
+    display->drawString(display->getWidth()/2, 25, "cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
     display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
     display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
@@ -244,8 +244,10 @@ void loop() {
     if (geigerCounter.impulse == true) {
       geigerCounter.impulse = false;
 
-      // add the impulse as a timestamp to array
-      geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros
+      // add the impulse as a timestamp to array providing we think we have enough memory
+      if (geigerCounter.precisionCounts < max_count) {
+        geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros
+      }
 
       // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
       memset(payload.message, 0, 12);
