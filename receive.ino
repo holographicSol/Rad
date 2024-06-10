@@ -52,10 +52,12 @@ GCStruct geigerCounter;
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  // display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
-    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM) + " cpm");
-    display->drawString(display->getWidth()/2, 28, String(geigerCounter.uSvh) + " uSv/h");
-    // display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
+
+    if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+    display->drawString(display->getWidth()/2, 26, "cpm");
+    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
+    display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
+    display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
 }
 
 // this array keeps function pointers to all frames are the single views that slide in
