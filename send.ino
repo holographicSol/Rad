@@ -137,16 +137,18 @@ void tube_impulse() {
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   if (geigerCounter.GCMODE == 2) {
-    display->drawString(0, 0, "Precision: " + String(timeData.microLoopTimeTaken));
-    display->drawString(0, 15, "CPM:   " + String(geigerCounter.precisionCPM));
-    display->drawString(0, 25, "uSv/h:  " + String(geigerCounter.precisioncUSVH));
-    display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
+    display->drawString(display->getWidth()/2, 13, String(geigerCounter.precisionCPM));
+    display->drawString(display->getWidth()/2, 28, String(geigerCounter.precisioncUSVH));
+    // display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
   }
   else if (geigerCounter.GCMODE == 3) {
-    display->drawString(0, 0, "Burst Guage: " + String(timeData.microLoopTimeTaken));
-    display->drawString(0, 15, "CPM:   " + String(geigerCounter.precisionCPM));
-    display->drawString(0, 25, "uSv/h:  " + String(geigerCounter.precisioncUSVH));
-    display->drawString(0, 35, "Epoch: " + String(geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD - (geigerCounter.currentMillis - geigerCounter.previousMillis)));
+    display->setTextAlignment(TEXT_ALIGN_CENTER);
+    display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
+    display->drawString(display->getWidth()/2, 15, String(geigerCounter.precisionCPM));
+    display->drawString(display->getWidth()/2, 25, String(geigerCounter.precisioncUSVH));
+    // display->drawString(0, 35, "Epoch: " + String(geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD - (geigerCounter.currentMillis - geigerCounter.previousMillis)));
   }
 }
 
@@ -168,7 +170,7 @@ void setup() {
   if (! rtc.isrunning()) {
     Serial.println("RTC is NOT running, let's set the time!");
   }
-  rtc.adjust(DateTime(2000, 1, 1, 1, 1, 1)); // Y M D H MS. uncomment this thine during compile time only if the clock is not already set
+  rtc.adjust(DateTime(1970, 1, 1, 0, 0, 0)); // Y M D H MS. uncomment this thine during compile time only if the clock is not already set
 
   // display
   display.init();
@@ -179,6 +181,7 @@ void setup() {
   display.setFont(ArialMT_Plain_10);
   display.cls();
   display.println("starting..");
+  ui.disableAllIndicators();
 
   // system
   Serial.print("XTAL Crystal Frequency: ");
@@ -309,6 +312,14 @@ void loop() {
 
   // refresh ssd1306 128x64 display
   ui.update();
+
+    // transmit the resultss
+  memset(payload.message, 0, 12);
+  memset(geigerCounter.precisionCPM_str, 0, 12);
+  dtostrf(geigerCounter.precisionCPM, 0, 4, geigerCounter.precisionCPM_str);
+  memcpy(payload.message, geigerCounter.precisionCPM_str, sizeof(geigerCounter.precisionCPM_str));
+  payload.payloadID = 1111;
+  radio.write(&payload, sizeof(payload));
 
   // store time taken to complete
   timeData.microLoopTimeTaken = micros() - timeData.microLoopTimeStart;
