@@ -86,7 +86,7 @@ TimeStruct timeData;
 // time resolution greater than main loop time is not currently required so make the most of those seconds from the RTC by dividing them instead of using micros() which will overflow.
 // any reference to microseconds in this function is temporary and will be refactored as these fractions of seconds are not microseconds, nor are they milliseconds, but they are divisions
 // of time smaller than milliseconds and greater than nano seconds. there are other ways like using the frequencies from other clocks but it will still be imprecise and then ultimately
-// you wont update CPM any faster than your main loop time anyway.
+// you wont update CPM any faster than your main loop time anyway. 
 double current_SUBSECOND_UNIXTIME() {
   DateTime time = rtc.now();
   dtostrf((unsigned long)time.unixtime(), 0, 0, timeData.unixtStr);
@@ -207,9 +207,13 @@ void loop() {
 
   // record impulse from interrupt once per loop instead of overloading ISR. means we want a fast loop eg: us1000(currently) = upto 1000 impulses
   // recorded a second. up to 1000 timestamps at current loop speeds multiplied by 60 seconds (60,000 timestamps) means we also need to throttle
-  // our max reading to something safe like countsArray[10240]. to get the most out of this sketch we would need more memory and a maybe even a
-  // faster processor for these current methods.
-  // each loop adds up to 1 impulse to countsArray and will remove all expired impulses from countsArray.
+  // our max CPM reading to something safe like countsArray[10240]. to get the most out of this sketch we would need more memory and maybe even a
+  // faster processor, and of course a higher resolution clock than the DS3231 High Precision RTC. for limited access to better hardware,
+  // (ideally medical/military grade) this sketch would benefit from having the CPM Burst Guage built into it for breaches of upper CPM limits
+  // and for the first 60 seconds after a cold boot, this way very cheaply there is a surprising degree of precision within a range of CPM
+  // currently defined mostly by the hardware limitations of this project on the ESP32 despite its high operating frequencies.
+  //
+  // each main loop adds up to 1 impulse to countsArray and will remove all expired impulses from countsArray.
 
   // check if impulse
   if (geigerCounter.impulse == true) {
@@ -218,7 +222,7 @@ void loop() {
     // add the impulse as a timestamp to array
     geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros    TOD: replace counts with another method of indexing
 
-    // transmit counts seperately so that the receiver(s) can behave like the actual geiger counter
+    // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
     memset(payload.message, 0, 12);
     memcpy(payload.message, "X", 1);
     payload.payloadID = 1000;
