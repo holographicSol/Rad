@@ -20,6 +20,8 @@
 #define CSN_PIN 26       // radio can use rx
 #define GEIGER_PIN 27
 
+volatile bool state = LOW;
+
 RTC_DS1307 rtc;
 RF24 radio(CE_PIN, CSN_PIN);
 SSD1306Wire display(0x3c, SDA, SCL);
@@ -54,8 +56,21 @@ struct GCStruct {
   unsigned long precisionCounts = 0;  // stores how many elements are in counts array
   unsigned long precisionCPM = 0;     // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
   char precisionCPM_str[12];
-  float precisioncUSVH = 0;                       // stores the micro-Sievert/hour for units of radiation dosing
-  unsigned long maxPeriod = 60;                   // maximum logging period in seconds (microseconds). Should always be 60 (60,000,000 for one minute)
+  float precisioncUSVH = 0;           // stores the micro-Sievert/hour for units of radiation dosing
+  unsigned long maxPeriod = 60;       // maximum logging period in seconds (microseconds). Should always be 60 (60,000,000 for one minute)
+  unsigned long CPM_BURST_GUAGE_LOG_PERIOD = 15000; //Logging period in milliseconds, recommended value 15000-60000.
+  unsigned long CPM_BURST_GUAGE_MAX_PERIOD = 60000; //Maximum logging period without modifying this sketch. default 60000.
+  unsigned long cpm_high;
+  unsigned long cpm_low;
+  unsigned long previousMillis; //variable for time measurement
+  unsigned long currentMillis;
+  unsigned int multiplier;      //variable for calculation CPM in this sketch
+  unsigned int cpm_arr_max = 3;
+  unsigned int cpm_arr_itter = 0;
+  int cpms[6]={0,0,0,0,0,0};
+  float cpm_average;
+  int GCMODE = 2;
+  signed long previousCounts;
 };
 GCStruct geigerCounter;
 
@@ -121,10 +136,18 @@ void tube_impulse() {
 
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  display->drawString(0, 0, "Precision: " + String(timeData.microLoopTimeTaken));
-  display->drawString(0, 15, "CPM:   " + String(geigerCounter.precisionCPM));
-  display->drawString(0, 25, "uSv/h:  " + String(geigerCounter.precisioncUSVH));
-  display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
+  if (geigerCounter.GCMODE == 2) {
+    display->drawString(0, 0, "Precision: " + String(timeData.microLoopTimeTaken));
+    display->drawString(0, 15, "CPM:   " + String(geigerCounter.precisionCPM));
+    display->drawString(0, 25, "uSv/h:  " + String(geigerCounter.precisioncUSVH));
+    display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
+  }
+  else if (geigerCounter.GCMODE == 3) {
+    display->drawString(0, 0, "Burst Guage: " + String(timeData.microLoopTimeTaken));
+    display->drawString(0, 15, "CPM:   " + String(geigerCounter.precisionCPM));
+    display->drawString(0, 25, "uSv/h:  " + String(geigerCounter.precisioncUSVH));
+    display->drawString(0, 35, "Epoch: " + String(geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD - (geigerCounter.currentMillis - geigerCounter.previousMillis)));
+  }
 }
 
 // this array keeps function pointers to all frames are the single views that slide in
@@ -190,7 +213,10 @@ void setup() {
 
 
 void loop() {
-  
+  if (state) {
+      Serial.println("mode: " + String(geigerCounter.GCMODE));
+      state = false;//reset interrupt flag
+  }
   // set current timestamp to be used this loop as UNIXTIME+MICROSECONDTIME. this is not actual time like a clock.
   timeData.currentTime = current_SUBSECOND_UNIXTIME();
   
@@ -198,7 +224,9 @@ void loop() {
   timeData.microLoopTimeStart = micros();
   
   // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
-  if (geigerCounter.precisionCounts < 10240-1) {
+  geigerCounter.precisionCounts = 20000;
+  // if (geigerCounter.precisionCounts < 10240-1) {
+  if (geigerCounter.GCMODE == 2) {
 
     // reset counts every minute
     if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
@@ -207,22 +235,6 @@ void loop() {
       geigerCounter.counts = 0;      // resets every 60 seconds
       geigerCounter.warmup = false;  // completed 60 second warmup required for precision
     }
-
-    // record impulse from interrupt once per loop instead of overloading ISR. means we want a fast loop eg: us1000(currently) = upto 1000 impulses
-    // recorded a second. up to 1000 timestamps at current loop speeds multiplied by 60 seconds (60,000 timestamps) means we also need to throttle
-    // our max CPM reading to something safe like countsArray[10240]. to get the most out of this sketch we would need more memory and maybe even a
-    // faster processor, and of course a higher resolution clock than the DS3231 High Precision RTC. for limited access to better hardware,
-    // (ideally medical/military grade) this sketch would benefit from having the CPM Burst Guage built into it for breaches of upper CPM limits
-    // and for the first 60 seconds after a cold boot, this way very cheaply there is a surprising degree of precision within a range of CPM
-    // currently defined mostly by the hardware limitations of this project on the ESP32 despite its high operating frequencies.
-    //
-    // ToDo: define conditions for activating the cpm burst guage. if doing so then display ESTIMATING somewhere on the oled:
-    //       - first 60 seconds.
-    //       - near upper cpm threshold (hardware specific)
-    //       - precision time becomes too high (may coincide with very high cpm and or a nearing upper cpm threshold because there will be more to process)
-    //
-    // each main loop adds up to 1 impulse to countsArray and will remove all expired impulses from countsArray.
-
     // check if impulse
     if (geigerCounter.impulse == true) {
       geigerCounter.impulse = false;
@@ -236,7 +248,6 @@ void loop() {
       payload.payloadID = 1000;
       radio.write(&payload, sizeof(payload));
     }
-
     // step through the array and remove expired impulses by exluding them from our new array.
     geigerCounter.precisionCounts = 0;
     memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
@@ -257,19 +268,45 @@ void loop() {
     // then calculate usv/h
     geigerCounter.precisionCPM = geigerCounter.precisionCounts;
     geigerCounter.precisioncUSVH = geigerCounter.precisionCPM * 0.00332;
+  }
   
   // cpm burst guage (estimates cpm reactively)
-  else {
-    // insert my cpm burst guage
+  else if (geigerCounter.GCMODE == 3) {
+    // cpm burst guage
+    geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 15000;
+    geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000;
+    if (geigerCounter.counts >= 1) {
+      geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 15000 / geigerCounter.counts;
+      geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000 / geigerCounter.counts;
+      geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = (unsigned long)(geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD);
+      geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = (unsigned long)(geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD);
+    }
+    // store highs and lows
+    if (geigerCounter.precisionCPM > geigerCounter.cpm_high) {geigerCounter.cpm_high = geigerCounter.precisionCPM;};
+    if ((geigerCounter.precisionCPM < geigerCounter.cpm_low) && (geigerCounter.precisionCPM >= 1)) {geigerCounter.cpm_low = geigerCounter.precisionCPM;};
+    // check the variable time window
+    geigerCounter.currentMillis = millis();
+    if(geigerCounter.currentMillis - geigerCounter.previousMillis > geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD){
+      geigerCounter.previousMillis = geigerCounter.currentMillis;
+      geigerCounter.multiplier = geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD / geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD; // calculating multiplier, depend on your log period
+      geigerCounter.multiplier = (unsigned int)(geigerCounter.multiplier);
+      geigerCounter.precisionCPM = geigerCounter.counts * geigerCounter.multiplier; /// multiply cpm by 0.003321969697 for geiger muller tube J305
+      geigerCounter.precisioncUSVH = geigerCounter.precisionCPM * 0.00332;
+      int i;
+      float sum = 0;
+      if (geigerCounter.cpm_arr_itter <= geigerCounter.cpm_arr_max) {geigerCounter.cpms[geigerCounter.cpm_arr_itter]=geigerCounter.cpm_high; Serial.println("[" + String(geigerCounter.cpm_arr_itter) + "] " + String(geigerCounter.cpms[geigerCounter.cpm_arr_itter])); geigerCounter.cpm_arr_itter++;}
+      if (geigerCounter.cpm_arr_itter == geigerCounter.cpm_arr_max) {
+        // average between lowest high and highest high (so far the more prefferable)
+        for(i = 0; i < 3; i++) {sum = sum + geigerCounter.cpms[i];}
+        geigerCounter.cpm_average = sum/3.0;
+        geigerCounter.cpm_average = (long int)geigerCounter.cpm_average;
+        Serial.println("cpm_average: " + String(geigerCounter.cpm_average));
+        geigerCounter.precisioncUSVH = geigerCounter.cpm_average * 0.00332;
+        geigerCounter.cpm_high=0; geigerCounter.cpm_low=0; geigerCounter.cpm_arr_itter = 0;
+      }
+    geigerCounter.counts = 0;
+    }
   }
-
-  // transmit the resultss
-  memset(payload.message, 0, 12);
-  memset(geigerCounter.precisionCPM_str, 0, 12);
-  dtostrf(geigerCounter.precisionCPM, 0, 4, geigerCounter.precisionCPM_str);
-  memcpy(payload.message, geigerCounter.precisionCPM_str, sizeof(geigerCounter.precisionCPM_str));
-  payload.payloadID = 1111;
-  radio.write(&payload, sizeof(payload));
 
   // refresh ssd1306 128x64 display
   ui.update();
@@ -277,3 +314,4 @@ void loop() {
   // store time taken to complete
   timeData.microLoopTimeTaken = micros() - timeData.microLoopTimeStart;
 }
+
