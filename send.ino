@@ -85,7 +85,7 @@ TimeStruct timeData;
 // concatinates unix time and micros to make timestamps. requires loop time taken and accuracy and resolution is predicated upon loop time.
 // time resolution greater than main loop time is not currently required so make the most of those seconds from the RTC by dividing them instead of using micros() which will overflow.
 // any reference to microseconds in this function is temporary and will be refactored as these fractions of seconds are not microseconds, nor are they milliseconds, but they are divisions
-// time smaller than milliseconds and greater than nano seconds. 
+// of time smaller than milliseconds and greater than nano seconds. 
 double current_SUBSECOND_UNIXTIME() {
   DateTime time = rtc.now();
   dtostrf((unsigned long)time.unixtime(), 0, 0, timeData.unixtStr);
