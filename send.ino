@@ -123,7 +123,7 @@ double current_SUBSECOND_UNIXTIME() {
   timeData.microsStr[0] = timeData.microsStrTag[0]; // put a period at the beginning of our new string
   strcat(timeData.microsStr, timeData.microsStrTmp); // copy micros into new string after the period
   strcat(timeData.UNIX_MICRO_TIME, timeData.microsStr); // concatinate unix time with new string that looks suspiciously like a double
-  // timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME); // make the string an actual double
+  timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME); // make the string an actual double
   // Serial.print("SUBSECOND_UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
   return timeData.UNIX_MICRO_TIME_I;
 }
@@ -168,7 +168,7 @@ void setup() {
   if (! rtc.isrunning()) {
     Serial.println("RTC is NOT running, let's set the time!");
   }
-  // rtc.adjust(DateTime(2024, 6, 9, 16, 15, 0)); // Y M D H MS. uncomment this thine during compile time only if the clock is not already set
+  rtc.adjust(DateTime(2000, 1, 1, 1, 1, 1)); // Y M D H MS. uncomment this thine during compile time only if the clock is not already set
 
   // display
   display.init();
@@ -213,18 +213,15 @@ void setup() {
 
 
 void loop() {
-  if (state) {
-      Serial.println("mode: " + String(geigerCounter.GCMODE));
-      state = false;//reset interrupt flag
-  }
   // set current timestamp to be used this loop as UNIXTIME+MICROSECONDTIME. this is not actual time like a clock.
   timeData.currentTime = current_SUBSECOND_UNIXTIME();
+
+  // Serial.print("currentTime: "); Serial.println(timeData.currentTime, 12);
   
   // store current time in micros to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.microLoopTimeStart = micros();
   
   // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
-  geigerCounter.precisionCounts = 20000;
   // if (geigerCounter.precisionCounts < 10240-1) {
   if (geigerCounter.GCMODE == 2) {
 
@@ -240,7 +237,7 @@ void loop() {
       geigerCounter.impulse = false;
 
       // add the impulse as a timestamp to array
-      geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros    TOD: replace counts with another method of indexing
+      geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros
 
       // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
       memset(payload.message, 0, 12);
@@ -253,10 +250,12 @@ void loop() {
     memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
     for (int i = 0; i < max_count; i++) {
       if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
+          // Serial.println(String(geigerCounter.countsArray[i]) + " REMOVING");
         if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
           geigerCounter.countsArray[i] = 0;
           }
         else {
+          // Serial.println(String(geigerCounter.countsArray[i]));
           geigerCounter.precisionCounts++; // non expired counters increment the precision counter
           geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i];  // non expired counters go into the new temporary array
         }
