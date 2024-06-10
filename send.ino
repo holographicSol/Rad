@@ -13,6 +13,7 @@
 #include "RF24.h"
 #include "OLEDDisplayUi.h"
 #include "RTClib.h"
+#include <stdlib.h>
 
 #define max_count 10240  // memory limitations require counts log max (todo: increase max) HAS TO BE THE SAME VALUE AS GCTIME AND GCTTIME!
 #define CE_PIN 25        // radio can use tx
@@ -63,40 +64,49 @@ struct TimeStruct {
   double PREVIOUS_UNIX_MICRO_TIME_I;
   char UNIX_MICRO_TIME[100];
   char PREVIOUS_UNIX_MICRO_TIME[100];
-  unsigned long microsI;
+  double microsI;
   double microsF;
-  char microsStr[56];
-  char microsStrTmp[56];
-  char unixtStr[56];
+  char microsStr[54];
+  char microsStrTmp[54];
+  char unixtStr[54];
   double currentTime;                          // a placeholder for a current time (optionally used)
   double previousTime;                         // a placeholder for a previous time (optionally used)
   unsigned long microLoopTimeTaken;                   // necessary to count time less than a second (must be updated every loop of main)
   unsigned long microLoopTimeStart;                   // necessary for loop time taken (must be recorded every loop of main)
   unsigned long microAccumulator;                     // accumulates loop time take and resets at threshold (must accumulate every loop of main)
   unsigned long microAccumulatorThreshold = 1000000;  // micro accumulator resets to zero when the threshold is reached (10^6 or any other number say if you dont need current time)
+  double microseconds = 0;
+  unsigned long microMultiplier = 1;
+  int previousSecond = 0;
   char microsStrTag[4] = ".";
 };
 TimeStruct timeData;
 
 // concatinates unix time and micros to make timestamps. requires loop time taken and accuracy and resolution is predicated upon loop time.
-// TODO: finally nudge rtc time to be inline with micros
-double current_UNIX_MICRO_TIME() {
+// time resolution greater than main loop time is not currently required so make the most of those seconds using the RTC because micros() which will overflow. 
+double current_SUBSECOND_UNIXTIME() {
   DateTime time = rtc.now();
   dtostrf((unsigned long)time.unixtime(), 0, 0, timeData.unixtStr);
+  if (timeData.previousSecond != time.second()) {
+    timeData.previousSecond = time.second();
+    timeData.microMultiplier = 1;
+    timeData.microseconds = 0;
+  }
+  else {
+    timeData.microseconds+=(double)((1.0*timeData.microMultiplier) / 1000000.0);
+    timeData.microMultiplier++;
+  }
   strcpy(timeData.UNIX_MICRO_TIME, timeData.unixtStr);
-
-  // Serial.print("UNIX_MICRO_TIME: "); Serial.println(timeData.UNIX_MICRO_TIME);
-
-  if (timeData.microAccumulator < (timeData.microAccumulatorThreshold - timeData.microLoopTimeTaken - 1)) { timeData.microAccumulator+=timeData.microLoopTimeTaken; }
-  else { timeData.microAccumulator = 0; }
-  timeData.microsI = timeData.microAccumulator;
+  timeData.microsI = timeData.microseconds;
   memset(timeData.microsStr, 0, sizeof(timeData.microsStr));
-  memset(timeData.microsStrTmp, 0, sizeof(timeData.microsStrTmp)); // clear strings
-  dtostrf(timeData.microsI, 0, 0, timeData.microsStrTmp); // micros into temp
+  memset(timeData.microsStrTmp, 0, sizeof(timeData.microsStrTmp));
+  sprintf(timeData.microsStrTmp,"%.10f", timeData.microsI);
+  memmove(timeData.microsStrTmp, timeData.microsStrTmp+2, strlen(timeData.microsStrTmp));
   timeData.microsStr[0] = timeData.microsStrTag[0]; // put a period at the beginning of our new string
   strcat(timeData.microsStr, timeData.microsStrTmp); // copy micros into new string after the period
   strcat(timeData.UNIX_MICRO_TIME, timeData.microsStr); // concatinate unix time with new string that looks suspiciously like a double
   timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME); // make the string an actual double
+  // Serial.print("UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
   return timeData.UNIX_MICRO_TIME_I;
 }
 
@@ -179,14 +189,14 @@ void setup() {
 void loop() {
 
   // set current timestamp to be used this loop as UNIXTIME+MICROSECONDTIME. this is not actual time like a clock.
-  timeData.currentTime = current_UNIX_MICRO_TIME();
+  timeData.currentTime = current_SUBSECOND_UNIXTIME();
   
   // store current time in micros to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.microLoopTimeStart = micros();
 
   // reset counts every minute
   if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
-    Serial.print("cycle expired: "); Serial.println(timeData.currentTime, 6);
+    Serial.print("cycle expired: "); Serial.println(timeData.currentTime, 12);
     timeData.previousTime = timeData.currentTime;
     geigerCounter.counts = 0;      // resets every 60 seconds
     geigerCounter.warmup = false;  // completed 60 second warmup required for precision
