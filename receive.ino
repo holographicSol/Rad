@@ -38,9 +38,9 @@ struct GCStruct {
   bool warmup = true; // sets false after first 60 seconds have passed
   unsigned long counts = 0; // stores counts and resets to zero every minute
   unsigned long precisionCounts = 0; // stores how many elements are in counts array
-  unsigned long precisionCPM = 0; // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
-  char precisionCPM_str[12];
-  float precisioncUSVH = 0; // stores the micro-Sievert/hour for units of radiation dosing
+  unsigned long CPM = 0; // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
+  char CPM_str[12];
+  float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60000000; //Maximum logging period in microseconds
   unsigned long currentMicrosMain; // stores current
   unsigned long previousMicrosMain; // stores previous
@@ -53,8 +53,8 @@ GCStruct geigerCounter;
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   // display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));
-  display->drawString(display->getWidth()/2, 13, String(geigerCounter.precisionCPM));
-  display->drawString(display->getWidth()/2, 28, String(geigerCounter.precisioncUSVH));
+    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM) + " cpm");
+    display->drawString(display->getWidth()/2, 28, String(geigerCounter.uSvh) + " uSv/h");
     // display->drawString(0, 35, "Epoch: " + String(geigerCounter.maxPeriod - (timeData.currentTime - timeData.previousTime)));
 }
 
@@ -128,10 +128,10 @@ void loop() {
 
     // cpm
     else if (payload.payloadID == 1111){
-      memset(geigerCounter.precisionCPM_str, 0, 12);
-      memcpy(geigerCounter.precisionCPM_str, payload.message, 12);
-      geigerCounter.precisionCPM = atoi(geigerCounter.precisionCPM_str);
-      geigerCounter.precisioncUSVH = geigerCounter.precisionCPM * 0.003321969697;
+      memset(geigerCounter.CPM_str, 0, 12);
+      memcpy(geigerCounter.CPM_str, payload.message, 12);
+      geigerCounter.CPM = atoi(geigerCounter.CPM_str);
+      geigerCounter.uSvh = geigerCounter.CPM * 0.003321969697;
     }
   }
 }
