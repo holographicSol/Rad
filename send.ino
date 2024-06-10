@@ -225,7 +225,9 @@ void loop() {
     geigerCounter.impulse = false;
 
     // add the impulse as a timestamp to array
-    geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros    TOD: replace counts with another method of indexing
+    if (geigerCounter.precisionCounts < 10240-1) {
+      geigerCounter.countsArray[geigerCounter.counts] = timeData.currentTime;  // add count to array as micros    TOD: replace counts with another method of indexing
+    }
 
     // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
     memset(payload.message, 0, 12);
