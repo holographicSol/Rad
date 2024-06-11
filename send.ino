@@ -266,7 +266,9 @@ void loop() {
     memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
     for (int i = 0; i < max_count; i++) {
       if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
-          // Serial.println(String(geigerCounter.countsArray[i]) + " REMOVING");
+        // Serial.println(String(geigerCounter.countsArray[i]) + " REMOVING");
+        
+        // if you have better performance/hardware then get current time here before comparing time (see tubeImpulseISR. tubeImpulseISR is timestamp into array, here timestamp must leave array)
         if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
           geigerCounter.countsArray[i] = 0;
           }
