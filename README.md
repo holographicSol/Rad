@@ -24,8 +24,6 @@ If Precision time is us500 (microseconds) as on my ESP32, then the main loop is 
 the geiger counter and remove N counts from countsArray in 500 microseconds. Precision time may increase/decrease
 according to current CPM because countsArray will take longer to process.
 
-Currently zero ero security on the tranceivers.
-
 
 ![plot](./resources/RadZeroShieldTesting.jpg)
 
@@ -52,3 +50,5 @@ Requirements:
 
 Bug: Arduino Micros() resets to zero after a period of time making all stored micros eternally non stale: update in progress.
 Potential Fix: An RTC has been added and I have created a custom timestamp by concatinating UNIX time and a division of a second per iteration in range of the same second. simple but effective.
+
+Note: Currently zero security on the tranceivers.
