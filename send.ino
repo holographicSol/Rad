@@ -119,8 +119,16 @@ double current_SUBSECOND_UNIXTIME() {
     timeData.microseconds+=(double)((1.0*timeData.microMultiplier) / 1000000.0);
     // increment the multiplier
     timeData.microMultiplier++;
-  }
+    }
+    // 1514764805.000087022781
+    // 1514764804.000088930130
+    // 1514764803.000087022781
+  
+  // microLoopTimeTaken
+  // Serial.print("microLoopTimeTaken: "); Serial.println(timeData.microLoopTimeTaken);
 
+  // Serial.print("microMultiplier: "); Serial.println(timeData.microMultiplier);
+  
   // clear strings
   memset(timeData.microsStr, 0, sizeof(timeData.microsStr));
   memset(timeData.microsStrTmp, 0, sizeof(timeData.microsStrTmp));
@@ -138,7 +146,7 @@ double current_SUBSECOND_UNIXTIME() {
 
   // make the string a double
   timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME);
-  // Serial.print("SUBSECOND_UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
+  Serial.print("SUBSECOND_UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
 
   return timeData.UNIX_MICRO_TIME_I;
 }
@@ -242,15 +250,15 @@ void setup() {
 
 
 void loop() {
+  // store current time in micros to measure this loop time so we know how quickly items are added/removed from counts arrays
+  timeData.microLoopTimeStart = micros();
+
   // set current timestamp to be used this loop as UNIXTIME + subsecond time. this is not indended for actual time like a wrist watch.
   // also set time once per loop unless you have the hardware/perfromance to set time for each impulse with a faster/lighter timestamping method that can sit in the ISR,
   // impulses in the same loop will have the same stamp which will not effect accuracy on spikes but when those impulses expire, they will expire in the same millisecond+- depending on loop speed.
   timeData.currentTime = current_SUBSECOND_UNIXTIME();
 
   // Serial.print("currentTime: "); Serial.println(timeData.currentTime, 12);
-  
-  // store current time in micros to measure this loop time so we know how quickly items are added/removed from counts arrays
-  timeData.microLoopTimeStart = micros();
 
   // check if impulse
   if (geigerCounter.impulse == true) {
