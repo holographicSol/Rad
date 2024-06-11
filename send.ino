@@ -99,29 +99,47 @@ struct TimeStruct {
 TimeStruct timeData;
 
 // concatinates unix time and micros to make timestamps. requires loop time taken. time resolution is predicated upon loop time and is not meant to be accurate, just unique compared to other times.
+// ToDo: timestamp faster
 double current_SUBSECOND_UNIXTIME() {
+
+  // get time now from rtc
   DateTime time = rtc.now();
-  dtostrf((unsigned long)time.unixtime(), 0, 0, timeData.unixtStr);
+
+  // convert unix time integer to unix time string
+  dtostrf((unsigned long)time.unixtime(), 0, 0, timeData.UNIX_MICRO_TIME);
+
+  // each new second reset microseconds to zero and multiplier back to one
   if (timeData.previousSecond != time.second()) {
     timeData.previousSecond = time.second();
     timeData.microMultiplier = 1;
     timeData.microseconds = 0;
   }
   else {
+    // if we are interested in microseconds then multiply one by number of iterations passed since last reset of the multiplier
     timeData.microseconds+=(double)((1.0*timeData.microMultiplier) / 1000000.0);
+    // increment the multiplier
     timeData.microMultiplier++;
   }
-  strcpy(timeData.UNIX_MICRO_TIME, timeData.unixtStr);
-  timeData.microsI = timeData.microseconds;
+
+  // clear strings
   memset(timeData.microsStr, 0, sizeof(timeData.microsStr));
   memset(timeData.microsStrTmp, 0, sizeof(timeData.microsStrTmp));
-  sprintf(timeData.microsStrTmp,"%.10f", timeData.microsI);
-  memmove(timeData.microsStrTmp, timeData.microsStrTmp+2, strlen(timeData.microsStrTmp));
-  timeData.microsStr[0] = timeData.microsStrTag[0]; // put a period at the beginning of our new string
-  strcat(timeData.microsStr, timeData.microsStrTmp); // copy micros into new string after the period
-  strcat(timeData.UNIX_MICRO_TIME, timeData.microsStr); // concatinate unix time with new string that looks suspiciously like a double
-  timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME); // make the string an actual double
-  // Serial.print("SUBSECOND_UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
+
+  // convert microseconds to string
+  sprintf(timeData.microsStrTmp,"%.10f", timeData.microseconds);
+  Serial.print("microsStrTmp_0: "); Serial.println(timeData.microsStrTmp);
+
+  // remove leading 0 from microsecond string
+  memmove(timeData.microsStrTmp, timeData.microsStrTmp+1, strlen(timeData.microsStrTmp));
+  Serial.print("microsStrTmp_1: "); Serial.println(timeData.microsStrTmp);
+  
+  // concatinate unix time with microsecond string
+  strcat(timeData.UNIX_MICRO_TIME, timeData.microsStrTmp);
+
+  // make the string a double
+  timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME);
+  Serial.print("SUBSECOND_UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
+
   return timeData.UNIX_MICRO_TIME_I;
 }
 
