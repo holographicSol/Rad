@@ -224,7 +224,7 @@ void setup() {
 
 
 void loop() {
-  // set current timestamp to be used this loop as UNIXTIME + subsecond time. this is not actual time like a clock.
+  // set current timestamp to be used this loop as UNIXTIME + subsecond time. this is not indended for actual time like a wrist watch.
   // also set time once per loop unless you have the hardware/perfromance to set time for each impulse with a faster/lighter timestamping method that can sit in the ISR,
   // impulses in the same loop will have the same stamp which will not effect accuracy on spikes but when those impulses expire, they will expire in the same millisecond+- depending on loop speed.
   timeData.currentTime = current_SUBSECOND_UNIXTIME();
