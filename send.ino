@@ -149,7 +149,7 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
     display->setTextAlignment(TEXT_ALIGN_CENTER);
 
     if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
-    // else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
+    else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
     display->drawString(display->getWidth()/2, 25, "cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
     display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
@@ -158,7 +158,7 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   else if (geigerCounter.GCMODE == 3) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
-    // else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
+    else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
     display->drawString(display->getWidth()/2, 25, "cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
     display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
@@ -235,8 +235,6 @@ void loop() {
   // store current time in micros to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.microLoopTimeStart = micros();
 
-  //#########################################################################################################################################################################
-
   // check if impulse
   if (geigerCounter.impulse == true) {
     geigerCounter.impulse = false;
@@ -247,14 +245,10 @@ void loop() {
     radio.write(&payload, sizeof(payload));
   }
   
-  //#########################################################################################################################################################################
-  
   // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
   if (geigerCounter.GCMODE == 2) {
     detachInterrupt(GEIGER_PIN);
     attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING);  // define external interrupts
-
-    //#########################################################################################################################################################################
 
     // reset counts every minute
     if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
@@ -262,8 +256,6 @@ void loop() {
       timeData.previousTime = timeData.currentTime;
       geigerCounter.warmup = false;  // completed 60 second warmup required for precision
     }
-
-    //#########################################################################################################################################################################
     
     // step through the array and remove expired impulses by exluding them from our new array.
     geigerCounter.precisionCounts = 0;
@@ -288,8 +280,6 @@ void loop() {
     geigerCounter.CPM = geigerCounter.precisionCounts;
     geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
   }
-
-  //###########################################################################################################################################################################
   
   // cpm burst guage (estimates cpm reactively)
   else if (geigerCounter.GCMODE == 3) {
@@ -330,8 +320,6 @@ void loop() {
     geigerCounter.counts = 0;
     }
   }
-
-  //#########################################################################################################################################################################
 
   // refresh ssd1306 128x64 display
   ui.update();
