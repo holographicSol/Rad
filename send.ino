@@ -130,7 +130,15 @@ double current_SUBSECOND_UNIXTIME() {
 }
 
 // subprocedure for capturing events from Geiger Kit
-void tube_impulse() {
+void tubeImpulseISR() {
+  // add the impulse as a timestamp to array providing we think we have enough memory
+  geigerCounter.countsArray[geigerCounter.countsIter] = timeData.currentTime;
+  geigerCounter.impulse = true;
+  if (geigerCounter.countsIter < max_count-1) {geigerCounter.countsIter++;}
+  else {geigerCounter.countsIter=0;}
+}
+
+void BGTubeImpulseISR() {
   geigerCounter.counts++;
   geigerCounter.impulse = true;
 }
@@ -215,9 +223,6 @@ void setup() {
   radio.openWritingPipe(address[1]);     // always uses pipe 0
   radio.openReadingPipe(1, address[0]);  // using pipe 1
   radio.stopListening();
-
-  // attach geiger counter pin to interrupts last
-  attachInterrupt(GEIGER_PIN, tube_impulse, FALLING);  //define external interrupts
 }
 
 
@@ -229,10 +234,25 @@ void loop() {
   
   // store current time in micros to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.microLoopTimeStart = micros();
+
+  //#########################################################################################################################################################################
+
+  // check if impulse
+  if (geigerCounter.impulse == true) {
+    geigerCounter.impulse = false;
+    // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
+    memset(payload.message, 0, 12);
+    memcpy(payload.message, "X", 1);
+    payload.payloadID = 1000;
+    radio.write(&payload, sizeof(payload));
+  }
+  
+  //#########################################################################################################################################################################
   
   // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
-  // if (geigerCounter.precisionCounts < 10240-1) {
   if (geigerCounter.GCMODE == 2) {
+    detachInterrupt(GEIGER_PIN);
+    attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING);  // define external interrupts
 
     //#########################################################################################################################################################################
 
@@ -240,34 +260,11 @@ void loop() {
     if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
       Serial.print("cycle expired: "); Serial.println(timeData.currentTime, 12);
       timeData.previousTime = timeData.currentTime;
-      // geigerCounter.counts = 0;      // resets every 60 seconds
       geigerCounter.warmup = false;  // completed 60 second warmup required for precision
     }
 
     //#########################################################################################################################################################################
-
-    // check if impulse
-    if (geigerCounter.impulse == true) {
-      geigerCounter.impulse = false;
-
-      // add the impulse as a timestamp to array providing we think we have enough memory
-      for (int i = 0; i < geigerCounter.counts; i++) {
-        if (geigerCounter.precisionCounts < max_count-1) {
-          geigerCounter.countsArray[geigerCounter.countsIter] = timeData.currentTime;  // add count to array as micros
-          if (geigerCounter.countsIter < max_count-1) {geigerCounter.countsIter++;}
-          else {geigerCounter.countsIter=0;}
-        }
-      }
-      geigerCounter.counts = 0; // resets every 60 seconds
-
-      // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
-      memset(payload.message, 0, 12);
-      memcpy(payload.message, "X", 1);
-      payload.payloadID = 1000;
-      radio.write(&payload, sizeof(payload));
-
-    //#########################################################################################################################################################################
-    }
+    
     // step through the array and remove expired impulses by exluding them from our new array.
     geigerCounter.precisionCounts = 0;
     memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
@@ -296,6 +293,8 @@ void loop() {
   
   // cpm burst guage (estimates cpm reactively)
   else if (geigerCounter.GCMODE == 3) {
+    detachInterrupt(GEIGER_PIN);
+    attachInterrupt(GEIGER_PIN, BGTubeImpulseISR, FALLING);  // define external interrupts
     // cpm burst guage
     geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 15000;
     geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000;
@@ -331,6 +330,8 @@ void loop() {
     geigerCounter.counts = 0;
     }
   }
+
+  //#########################################################################################################################################################################
 
   // refresh ssd1306 128x64 display
   ui.update();
