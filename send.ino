@@ -131,9 +131,10 @@ double current_SUBSECOND_UNIXTIME() {
 
 // subprocedure for capturing events from Geiger Kit
 void tubeImpulseISR() {
-  // add the impulse as a timestamp to array providing we think we have enough memory
-  geigerCounter.countsArray[geigerCounter.countsIter] = timeData.currentTime;
   geigerCounter.impulse = true;
+  // add the impulse as a timestamp to array somewhere in range of geigerCounter.countsIter
+  // if you have better performance/hardware and a 'lighter' call to retrieve more accurate time then individually timestamp each impulse below. but do not overload the ISR
+  geigerCounter.countsArray[geigerCounter.countsIter] = timeData.currentTime;
   if (geigerCounter.countsIter < max_count-1) {geigerCounter.countsIter++;}
   else {geigerCounter.countsIter=0;}
 }
@@ -228,8 +229,8 @@ void setup() {
 
 void loop() {
   // set current timestamp to be used this loop as UNIXTIME + subsecond time. this is not actual time like a clock.
-  // also set time once per loop unless you have the hardware/perfromance to set time for each impulse in which case move the impulse timestamp off the ISR into this loop and get time for each impulse.
-  // getting time once a loop means impulses effecting cpm can be updated as fast as possible having immediate effect while expired impulses with the same time will be removed together. 
+  // also set time once per loop unless you have the hardware/perfromance to set time for each impulse with a faster/lighter timestamping method that can sit in the ISR,
+  // impulses in the same loop will have the same stamp which will not effect accuracy on spikes but when those impulses expire, they will expire in the same millisecond+- depending on loop speed.
   timeData.currentTime = current_SUBSECOND_UNIXTIME();
 
   // Serial.print("currentTime: "); Serial.println(timeData.currentTime, 12);
@@ -240,6 +241,7 @@ void loop() {
   // check if impulse
   if (geigerCounter.impulse == true) {
     geigerCounter.impulse = false;
+
     // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
     memset(payload.message, 0, 12);
     memcpy(payload.message, "X", 1);
