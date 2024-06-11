@@ -127,18 +127,18 @@ double current_SUBSECOND_UNIXTIME() {
 
   // convert microseconds to string
   sprintf(timeData.microsStrTmp,"%.10f", timeData.microseconds);
-  Serial.print("microsStrTmp_0: "); Serial.println(timeData.microsStrTmp);
+  // Serial.print("microsStrTmp_0: "); Serial.println(timeData.microsStrTmp);
 
   // remove leading 0 from microsecond string
   memmove(timeData.microsStrTmp, timeData.microsStrTmp+1, strlen(timeData.microsStrTmp));
-  Serial.print("microsStrTmp_1: "); Serial.println(timeData.microsStrTmp);
+  // Serial.print("microsStrTmp_1: "); Serial.println(timeData.microsStrTmp);
   
   // concatinate unix time with microsecond string
   strcat(timeData.UNIX_MICRO_TIME, timeData.microsStrTmp);
 
   // make the string a double
   timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME);
-  Serial.print("SUBSECOND_UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
+  // Serial.print("SUBSECOND_UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
 
   return timeData.UNIX_MICRO_TIME_I;
 }
