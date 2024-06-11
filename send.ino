@@ -17,6 +17,7 @@
 
 // memory limitations require counts log max (todo: increase max) default for esp32: 10240. this value dramatically effects performance of main loop time.
 // larger buffer means higher max cpm reading, lower buffer means faster loop time but lower max cpm reading, at least on many MCU's this is worth considering.
+// on esp32 a maxcount of 100 should mean main loop time will be half the time of loop time with max count 10240.
 #define max_count 10240
 #define CE_PIN 25        // radio can use tx
 #define CSN_PIN 26       // radio can use rx
