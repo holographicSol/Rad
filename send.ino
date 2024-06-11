@@ -98,7 +98,7 @@ struct TimeStruct {
 };
 TimeStruct timeData;
 
-// concatinates unix time and micros to make timestamps. requires loop time taken. time resolution is predicated upon loop time and is not meant to be accurate, just unique compared to other times.
+// concatinates unix time and micros to make timestamps. time resolution is predicated upon loop time and is not meant to be accurate, just unique compared to other times.
 // ToDo: timestamp faster
 double current_SUBSECOND_UNIXTIME() {
 
