@@ -283,7 +283,8 @@ void loop() {
     geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
   }
   
-  // cpm burst guage (estimates cpm reactively)
+  // cpm burst guage (estimates cpm reactively with a dynamic time window in order to update values and peripherals responsively)
+  // the impulse measurement time window increases and decreases in response to current counts. 
   else if (geigerCounter.GCMODE == 3) {
     detachInterrupt(GEIGER_PIN);
     attachInterrupt(GEIGER_PIN, BGTubeImpulseISR, FALLING);  // define external interrupts
