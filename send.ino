@@ -285,7 +285,7 @@ void loop() {
   
   // cpm burst guage (estimates cpm reactively with a dynamic time window in order to update values and peripherals responsively)
   // the impulse measurement time window increases and decreases inversely proportional to current counts. counting slow takes time to update values, count to fast and you cant measure low activity,
-  // so the cpm burst guage does both, responsively and inversely proportional to counts.
+  // so the cpm burst guage does both, responsively and inversely proportional to counts. high counts means smaller time window, lower counts larger time window.
   else if (geigerCounter.GCMODE == 3) {
     detachInterrupt(GEIGER_PIN);
     attachInterrupt(GEIGER_PIN, BGTubeImpulseISR, FALLING);  // define external interrupts
