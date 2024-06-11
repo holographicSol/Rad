@@ -120,12 +120,6 @@ double current_SUBSECOND_UNIXTIME() {
     // increment the multiplier
     timeData.microMultiplier++;
     }
-    // 1514764805.000087022781
-    // 1514764804.000088930130
-    // 1514764803.000087022781
-  
-  // microLoopTimeTaken
-  // Serial.print("microLoopTimeTaken: "); Serial.println(timeData.microLoopTimeTaken);
 
   // Serial.print("microMultiplier: "); Serial.println(timeData.microMultiplier);
   
