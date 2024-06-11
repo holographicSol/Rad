@@ -27,7 +27,7 @@ according to current CPM because countsArray will take longer to process.
 Currently zero ero security on the tranceivers.
 
 
-![plot](./resources/RadZeroShieldTesting.JPG)
+![plot](./resources/RadZeroShieldTesting.jpg)
 
 
 Requirements:
