@@ -15,7 +15,9 @@
 #include "RTClib.h"
 #include <stdlib.h>
 
-#define max_count 10240  // memory limitations require counts log max (todo: increase max) HAS TO BE THE SAME VALUE AS GCTIME AND GCTTIME!
+// memory limitations require counts log max (todo: increase max) default for esp32: 10240. this value dramatically effects performance of main loop time.
+// larger buffer means higher max cpm reading, lower buffer means faster loop time but lower max cpm reading, at least on many MCU's this is worth considering.
+#define max_count 10240
 #define CE_PIN 25        // radio can use tx
 #define CSN_PIN 26       // radio can use rx
 #define GEIGER_PIN 27
@@ -48,8 +50,8 @@ PayloadStruct payload;
 
 // Geiger Counter
 struct GCStruct {
-  int countsArray[10240];             // stores each impulse as micros
-  int countsArrayTemp[10240];         // temporarily stores micros from countsArray that have not yet expired
+  int countsArray[max_count];             // stores each impulse as micros
+  int countsArrayTemp[max_count];         // temporarily stores micros from countsArray that have not yet expired
   bool impulse = false;               // sets true each interrupt on geiger counter pin
   bool warmup = true;                 // sets false after first 60 seconds have passed
   unsigned long counts;               // stores counts and resets to zero every minute
@@ -78,29 +80,34 @@ GCStruct geigerCounter;
 struct TimeStruct {
   double UNIX_MICRO_TIME_I;
   double PREVIOUS_UNIX_MICRO_TIME_I;
-  char UNIX_MICRO_TIME[100];
-  char PREVIOUS_UNIX_MICRO_TIME[100];
+  char UNIX_MICRO_TIME[20];
+  char PREVIOUS_UNIX_MICRO_TIME[20];
   double microsI;
   double microsF;
-  char microsStr[54];
-  char microsStrTmp[54];
-  char unixtStr[54];
+  char microsStr[20];
+  char microsStrTmp[20];
+  char unixtStr[20];
   double currentTime;                          // a placeholder for a current time (optionally used)
   double previousTime;                         // a placeholder for a previous time (optionally used)
   unsigned long microLoopTimeTaken;                   // necessary to count time less than a second (must be updated every loop of main)
   unsigned long microLoopTimeStart;                   // necessary for loop time taken (must be recorded every loop of main)
   unsigned long microAccumulator;                     // accumulates loop time take and resets at threshold (must accumulate every loop of main)
   unsigned long microAccumulatorThreshold = 1000000;  // micro accumulator resets to zero when the threshold is reached (10^6 or any other number say if you dont need current time)
-  double microseconds = 0;
+  unsigned long microseconds = 0;
   unsigned long microMultiplier = 0;
   int previousSecond = 0;
-  char microsStrTag[4] = ".";
+  int currentSecond = 0;
+  char microsStrTag[20] = ".";
 };
 TimeStruct timeData;
 
 // concatinates unix time and micros to make timestamps. time resolution is predicated upon loop time and is not meant to be accurate, just unique compared to other times.
 // ToDo: timestamp faster
 double current_SUBSECOND_UNIXTIME() {
+
+  // clear strings
+  memset(timeData.microsStr, 0, sizeof(timeData.microsStr));
+  memset(timeData.microsStrTmp, 0, sizeof(timeData.microsStrTmp));
 
   // get time now from rtc
   DateTime time = rtc.now();
@@ -109,34 +116,31 @@ double current_SUBSECOND_UNIXTIME() {
   dtostrf((unsigned long)time.unixtime(), 0, 0, timeData.UNIX_MICRO_TIME);
 
   // each new second reset microseconds to zero and multiplier back to one
-  if (timeData.previousSecond != time.second()) {
-    timeData.previousSecond = time.second();
+  timeData.currentSecond = time.second();
+  if (timeData.previousSecond != timeData.currentSecond) {
+    timeData.previousSecond = timeData.currentSecond;
     timeData.microseconds = 0;
   }
-  else {
-    // if we are interested in microseconds then multiply one by number of iterations passed since last reset of the multiplier
-    timeData.microseconds+=(double)((1.0*timeData.microMultiplier) / 1000000.0);
-    }
-  
-  // clear strings
-  memset(timeData.microsStr, 0, sizeof(timeData.microsStr));
-  memset(timeData.microsStrTmp, 0, sizeof(timeData.microsStrTmp));
+  timeData.microseconds+=(timeData.microLoopTimeTaken);
 
   // convert microseconds to string
-  sprintf(timeData.microsStrTmp,"%.10f", timeData.microseconds);
-  // Serial.print("microsStrTmp_0: "); Serial.println(timeData.microsStrTmp);
+  sprintf(timeData.microsStrTmp, "%d", timeData.microseconds);
+  // Serial.print("microsStrTmp: "); Serial.println(timeData.microsStrTmp);
 
-  // remove leading 0 from microsecond string
-  memmove(timeData.microsStrTmp, timeData.microsStrTmp+1, strlen(timeData.microsStrTmp));
-  // Serial.print("microsStrTmp_1: "); Serial.println(timeData.microsStrTmp);
+  // concatinate empty microsStr with tag
+  strcat(timeData.microsStr, timeData.microsStrTag);
+  // Serial.print("microsStr_0: "); Serial.println(timeData.microsStr);
+
+  // concatinate microsStr with microsecond string temp
+  strcat(timeData.microsStr, timeData.microsStrTmp);
+  // Serial.print("microsStr_1: "); Serial.println(timeData.microsStr);
   
   // concatinate unix time with microsecond string
-  strcat(timeData.UNIX_MICRO_TIME, timeData.microsStrTmp);
+  strcat(timeData.UNIX_MICRO_TIME, timeData.microsStr);
+  // Serial.print("UNIX_MICRO_TIME: "); Serial.println(timeData.UNIX_MICRO_TIME);
 
   // make the string a double
   timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME);
-  Serial.print("SUBSECOND_UNIXTIME: "); Serial.println(timeData.UNIX_MICRO_TIME_I, 12);
-
   return timeData.UNIX_MICRO_TIME_I;
 }
 
@@ -235,6 +239,8 @@ void setup() {
   radio.openWritingPipe(address[1]);     // always uses pipe 0
   radio.openReadingPipe(1, address[0]);  // using pipe 1
   radio.stopListening();
+
+  // attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING);  // define external interrupts
 }
 
 
@@ -267,7 +273,7 @@ void loop() {
 
     // set previous time each minute
     if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
-      Serial.print("cycle expired: "); Serial.println(timeData.currentTime, 12);
+      Serial.print("cycle expired: "); Serial.println(timeData.currentTime, sizeof(timeData.currentTime));
       timeData.previousTime = timeData.currentTime;
       geigerCounter.warmup = false;  // completed 60 second warmup required for precision
     }
@@ -353,5 +359,7 @@ void loop() {
 
   // store time taken to complete
   timeData.microLoopTimeTaken = micros() - timeData.microLoopTimeStart;
+  // Serial.println("timeData.microLoopTimeTaken:" + String(timeData.microLoopTimeTaken));
+  // delay(1000);
 }
 
