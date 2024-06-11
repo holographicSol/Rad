@@ -254,7 +254,7 @@ void loop() {
     detachInterrupt(GEIGER_PIN);
     attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING);  // define external interrupts
 
-    // reset counts every minute
+    // set previous time each minute
     if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
       Serial.print("cycle expired: "); Serial.println(timeData.currentTime, 12);
       timeData.previousTime = timeData.currentTime;
@@ -267,7 +267,7 @@ void loop() {
     for (int i = 0; i < max_count; i++) {
       if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
         // Serial.println(String(geigerCounter.countsArray[i]) + " REMOVING");
-        
+
         // if you have better performance/hardware then get current time here before comparing time (see tubeImpulseISR. tubeImpulseISR is timestamp into array, here timestamp must leave array)
         if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
           geigerCounter.countsArray[i] = 0;
