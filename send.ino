@@ -307,8 +307,8 @@ void loop() {
       geigerCounter.previousMillis = geigerCounter.currentMillis;
       geigerCounter.multiplier = geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD / geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD; // calculating multiplier, depend on your log period
       geigerCounter.multiplier = (unsigned int)(geigerCounter.multiplier);
-      geigerCounter.CPM = geigerCounter.counts * geigerCounter.multiplier; /// multiply cpm by 0.003321969697 for geiger muller tube J305
-      geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
+      geigerCounter.CPM = geigerCounter.counts * geigerCounter.multiplier;
+      geigerCounter.uSvh = geigerCounter.CPM * 0.00332; // multiply cpm by 0.003321969697 for geiger muller tube J305
       int i;
       float sum = 0;
       if (geigerCounter.cpm_arr_itter <= geigerCounter.cpm_arr_max) {geigerCounter.cpms[geigerCounter.cpm_arr_itter]=geigerCounter.cpm_high; Serial.println("[" + String(geigerCounter.cpm_arr_itter) + "] " + String(geigerCounter.cpms[geigerCounter.cpm_arr_itter])); geigerCounter.cpm_arr_itter++;}
