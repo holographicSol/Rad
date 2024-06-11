@@ -118,7 +118,7 @@ double current_SUBSECOND_UNIXTIME() {
     // if we are interested in microseconds then multiply one by number of iterations passed since last reset of the multiplier
     timeData.microseconds+=(double)((1.0*timeData.microMultiplier) / 1000000.0);
     // increment the multiplier
-    timeData.microMultiplier++;
+    // timeData.microMultiplier++;
     }
 
   // Serial.print("microMultiplier: "); Serial.println(timeData.microMultiplier);
