@@ -26,9 +26,7 @@ according to current CPM because countsArray will take longer to process.
 
 Currently zero ero security on the tranceivers.
 
-
-![plot](./resources/Rad_Transceivers.JPG)
-
+![plot](./resources/RadZeroShieldTesting.JPG)
 
 Requirements:
 
@@ -46,8 +44,7 @@ Requirements:
 
 1x DS3231 High Precision RTC.
 
-
-
+![plot](./resources/Rad_Transceivers.JPG)
 
 Bug: Arduino Micros() resets to zero after a period of time making all stored micros eternally non stale: update in progress.
 Potential Fix: An RTC has been added and I have created a custom timestamp by concatinating UNIX time and a division of a second per iteration in range of the same second. simple but effective.
