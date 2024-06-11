@@ -111,17 +111,12 @@ double current_SUBSECOND_UNIXTIME() {
   // each new second reset microseconds to zero and multiplier back to one
   if (timeData.previousSecond != time.second()) {
     timeData.previousSecond = time.second();
-    timeData.microMultiplier = 1;
     timeData.microseconds = 0;
   }
   else {
     // if we are interested in microseconds then multiply one by number of iterations passed since last reset of the multiplier
     timeData.microseconds+=(double)((1.0*timeData.microMultiplier) / 1000000.0);
-    // increment the multiplier
-    // timeData.microMultiplier++;
     }
-
-  // Serial.print("microMultiplier: "); Serial.println(timeData.microMultiplier);
   
   // clear strings
   memset(timeData.microsStr, 0, sizeof(timeData.microsStr));
