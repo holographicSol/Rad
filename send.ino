@@ -227,7 +227,9 @@ void setup() {
 
 
 void loop() {
-  // set current timestamp to be used this loop as UNIXTIME+MICROSECONDTIME. this is not actual time like a clock.
+  // set current timestamp to be used this loop as UNIXTIME + subsecond time. this is not actual time like a clock.
+  // also set time once per loop unless you have the hardware/perfromance to set time for each impulse in which case move the impulse timestamp off the ISR into this loop and get time for each impulse.
+  // getting time once a loop means impulses effecting cpm can be updated as fast as possible having immediate effect while expired impulses with the same time will be removed together. 
   timeData.currentTime = current_SUBSECOND_UNIXTIME();
 
   // Serial.print("currentTime: "); Serial.println(timeData.currentTime, 12);
