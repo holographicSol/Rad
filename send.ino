@@ -54,23 +54,23 @@ PayloadStruct payload;
 
 // Geiger Counter
 struct GCStruct {
-  int countsArray[max_count];             // stores each impulse as micros
-  int countsArrayTemp[max_count];         // temporarily stores micros from countsArray that have not yet expired
-  bool impulse = false;               // sets true each interrupt on geiger counter pin
-  bool warmup = true;                 // sets false after first 60 seconds have passed
-  unsigned long counts;               // stores counts and resets to zero every minute
-  unsigned long precisionCounts = 0;  // stores how many elements are in counts array
-  unsigned long CPM = 0;              // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
+  int countsArray[max_count]; // stores each impulse as micros
+  int countsArrayTemp[max_count]; // temporarily stores micros from countsArray that have not yet expired
+  bool impulse = false; // sets true each interrupt on geiger counter pin
+  bool warmup = true; // sets false after first 60 seconds have passed
+  unsigned long counts; // stores counts and resets to zero every minute
+  unsigned long precisionCounts = 0; // stores how many elements are in counts array
+  unsigned long CPM = 0; // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
   char CPM_str[12];
-  float uSvh = 0;                     // stores the micro-Sievert/hour for units of radiation dosing
-  unsigned long maxPeriod = 60;       // maximum logging period in seconds (microseconds). Should always be 60 (60,000,000 for one minute)
-  unsigned long CPM_BURST_GUAGE_LOG_PERIOD = 15000; //Logging period in milliseconds, recommended value 15000-60000.
-  unsigned long CPM_BURST_GUAGE_MAX_PERIOD = 60000; //Maximum logging period without modifying this sketch. default 60000.
+  float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
+  unsigned long maxPeriod = 60; // maximum logging period in seconds (microseconds). Should always be 60 (60,000,000 for one minute)
+  unsigned long CPM_BURST_GUAGE_LOG_PERIOD = 15000; // Logging period in milliseconds, recommended value 15000-60000.
+  unsigned long CPM_BURST_GUAGE_MAX_PERIOD = 60000; // Maximum logging period without modifying this sketch. default 60000.
   unsigned long cpm_high;
   unsigned long cpm_low;
-  unsigned long previousMillis; //variable for time measurement
+  unsigned long previousMillis; // variable for time measurement
   unsigned long currentMillis;
-  unsigned int multiplier;      //variable for calculation CPM in this sketch
+  unsigned int multiplier; // variable for calculation CPM
   unsigned int cpm_arr_max = 3;
   unsigned int cpm_arr_itter = 0;
   int cpms[6]={0,0,0,0,0,0};
@@ -86,10 +86,10 @@ struct TimeStruct {
   char UNIX_MICRO_TIME[20];
   char microsStr[20];
   char microsStrTmp[20];
-  double currentTime;                          // a placeholder for a current time (optionally used)
-  double previousTime;                         // a placeholder for a previous time (optionally used)
-  unsigned long microLoopTimeTaken;                   // necessary to count time less than a second (must be updated every loop of main)
-  unsigned long microLoopTimeStart;                   // necessary for loop time taken (must be recorded every loop of main)
+  double currentTime; // a placeholder for a current time (optionally used)
+  double previousTime; // a placeholder for a previous time (optionally used)
+  unsigned long microLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
+  unsigned long microLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
   unsigned long microseconds = 0;
   int previousSecond = 0;
   int currentSecond = 0;
@@ -223,16 +223,16 @@ void setup() {
   }
   radio.flush_rx();
   radio.flush_tx();
-  radio.setPALevel(RF24_PA_LOW);          // RF24_PA_MAX is default.
-  radio.setPayloadSize(sizeof(payload));  // 2x int datatype occupy 8 bytes
+  radio.setPALevel(RF24_PA_LOW); // RF24_PA_MAX is default.
+  radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
   Serial.println("Channel:  " + String(radio.getChannel()));
   Serial.println("Data Rate:" + String(radio.getDataRate()));
   Serial.println("PA Level: " + String(radio.getPALevel()));
-  radio.openWritingPipe(address[1]);     // always uses pipe 0
-  radio.openReadingPipe(1, address[0]);  // using pipe 1
+  radio.openWritingPipe(address[1]); // always uses pipe 0
+  radio.openReadingPipe(1, address[0]); // using pipe 1
   radio.stopListening();
 
-  // attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING);  // define external interrupts
+  // attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
 
 
@@ -261,13 +261,13 @@ void loop() {
   // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
   if (geigerCounter.GCMODE == 2) {
     detachInterrupt(GEIGER_PIN);
-    attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING);  // define external interrupts
+    attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 
     // set previous time each minute
     if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
       Serial.print("cycle expired: "); Serial.println(timeData.currentTime, sizeof(timeData.currentTime));
       timeData.previousTime = timeData.currentTime;
-      geigerCounter.warmup = false;  // completed 60 second warmup required for precision
+      geigerCounter.warmup = false; // completed 60 second warmup required for precision
     }
     
     // step through the array and remove expired impulses by exluding them from our new array.
@@ -284,7 +284,7 @@ void loop() {
         else {
           // Serial.println(String(geigerCounter.countsArray[i]));
           geigerCounter.precisionCounts++; // non expired counters increment the precision counter
-          geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i];  // non expired counters go into the new temporary array
+          geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // non expired counters go into the new temporary array
         }
       }
     }
@@ -301,7 +301,7 @@ void loop() {
   // so the cpm burst guage does both, responsively and inversely proportional to counts. higher counts means smaller time window, lower counts meanse larger time window.
   else if (geigerCounter.GCMODE == 3) {
     detachInterrupt(GEIGER_PIN);
-    attachInterrupt(GEIGER_PIN, BGTubeImpulseISR, FALLING);  // define external interrupts
+    attachInterrupt(GEIGER_PIN, BGTubeImpulseISR, FALLING); // define external interrupts
     // cpm burst guage
     geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 15000;
     geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000;
@@ -341,7 +341,7 @@ void loop() {
   // refresh ssd1306 128x64 display
   ui.update();
 
-    // transmit the resultss
+  // transmit the results
   memset(payload.message, 0, 12);
   memset(geigerCounter.CPM_str, 0, 12);
   dtostrf(geigerCounter.CPM, 0, 4, geigerCounter.CPM_str);
