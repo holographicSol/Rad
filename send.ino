@@ -101,9 +101,7 @@ struct TimeStruct {
 };
 TimeStruct timeData;
 
-// concatinates unix time and 'subTime' to make timestamps. time resolution is predicated upon loop time and is not meant to be accurate, just unique compared to other times.
-// ToDo: timestamp faster. next time evaluation testing of counting your own micros instead of calling the rtc. counting your own micros will likely be faster than calling the rtc,
-//       just ensure your unit of micros is small enough to reasonably account for micros() overflow when it happens. otherwise currently here is the rtc version of time handling.
+// create a timestamp
 double currentTime() {
   
   if (timeData.subTime >= 1000) {
@@ -123,6 +121,7 @@ double currentTime() {
   return timeData.timestamp;
 }
 
+// create an intermediary timestamp
 double interCurrentTime() {
 
   timeData.interTime = (micros() - timeData.mainLoopTimeStart);
@@ -274,8 +273,10 @@ void loop() {
     for (int i = 0; i < max_count; i++) {
       if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
 
-        // compare current timestamp to timestamps in array, each time getting new current time
-        if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
+        // compare current timestamp to timestamps in array, each time using timestamp set in the beginning of this loop (faster)
+        if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
+        // compare current timestamp to timestamps in array, each time getting new current time (more or less precise each compare)
+        // if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
           // Serial.print(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i])); Serial.println(" REMOVING");
           geigerCounter.countsArray[i] = 0;
           }
