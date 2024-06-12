@@ -21,7 +21,7 @@
 // it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in is reacting to a precise cpm reading within the shortest time you can.
 // if instead you are actually trying to get as precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase max count from 10240
 // providing you beleive there is the memory and performance available on the MCU your building for.
-#define max_count 10240
+#define max_count 100
 #define CE_PIN 25 // radio can use tx
 #define CSN_PIN 26 // radio can use rx
 #define GEIGER_PIN 27
@@ -54,8 +54,8 @@ PayloadStruct payload;
 
 // Geiger Counter
 struct GCStruct {
-  int countsArray[max_count]; // stores each impulse as timestamps
-  int countsArrayTemp[max_count]; // temporarily stores timestamps from countsArray that have not yet expired
+  double countsArray[max_count]; // stores each impulse as timestamps
+  double countsArrayTemp[max_count]; // temporarily stores timestamps from countsArray that have not yet expired
   bool impulse = false; // sets true each interrupt on geiger counter pin
   bool warmup = true; // sets false after first 60 seconds have passed
   unsigned long counts; // stores counts and resets to zero every minute
@@ -82,59 +82,57 @@ struct GCStruct {
 GCStruct geigerCounter;
 
 struct TimeStruct {
-  double UNIX_MICRO_TIME_I;
-  char UNIX_MICRO_TIME[20];
-  char subTimeStr[20];
-  char subTimeStrTmp[20];
-  double currentTime; // a placeholder for a current time (optionally used)
-  double previousTime; // a placeholder for a previous time (optionally used)
+  // double currentTime; // a placeholder for a current time (optionally used)
+  double previousTimestamp; // a placeholder for a previous time (optionally used)
+  unsigned long currentSubTime;
   unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
   unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
-  unsigned long subTime = 0;
-  int previousSecond = 0;
-  int currentSecond = 0;
-  char subTimeStrTag[20] = ".";
+  double subTime;
+  double subTimeDivided;
+  double interTimeDivided;
+  double interTimestamp;
+  unsigned long currentMilliSecond;
+  unsigned long currentMinute;
+  unsigned long previousSecond;
+  unsigned long currentSecond;
+  double timestamp;
+  unsigned long currentHour;
+  double interTime;
 };
 TimeStruct timeData;
 
 // concatinates unix time and 'subTime' to make timestamps. time resolution is predicated upon loop time and is not meant to be accurate, just unique compared to other times.
-// ToDo: timestamp faster
-double current_SUBSECOND_UNIXTIME() {
-
-  // clear strings
-  memset(timeData.subTimeStr, 0, sizeof(timeData.subTimeStr));
-  memset(timeData.subTimeStrTmp, 0, sizeof(timeData.subTimeStrTmp));
-
-  // get time now from rtc. this takes time to call so compile your own seconds/minutes/etc from micros if time is of concern. 
-  DateTime time = rtc.now();
-
-  // convert unix time integer to unix time string
-  dtostrf((unsigned long)time.unixtime(), 0, 0, timeData.UNIX_MICRO_TIME);
-
-  // each new second reset subTime to zero and multiplier back to one
-  timeData.currentSecond = time.second();
-  if (timeData.previousSecond != timeData.currentSecond) {
-    timeData.previousSecond = timeData.currentSecond;
-    timeData.subTime = 0;
-  }
-  // note that name subTime avoids need for refactoring making mainLoopTimeTaken units of time more flexible
-  timeData.subTime+=(timeData.mainLoopTimeTaken);
-
-  // convert subTime to string
-  sprintf(timeData.subTimeStrTmp, "%d", timeData.subTime);
-
-  // concatinate empty subTimeStr with tag
-  strcat(timeData.subTimeStr, timeData.subTimeStrTag);
-
-  // concatinate subTimeStr with subTime string temp
-  strcat(timeData.subTimeStr, timeData.subTimeStrTmp);
+// ToDo: timestamp faster. next time evaluation testing of counting your own micros instead of calling the rtc. counting your own micros will likely be faster than calling the rtc,
+//       just ensure your unit of micros is small enough to reasonably account for micros() overflow when it happens. otherwise currently here is the rtc version of time handling.
+double currentTime() {
   
-  // concatinate unix time with subTime string
-  strcat(timeData.UNIX_MICRO_TIME, timeData.subTimeStr);
+  if (timeData.subTime >= 1000) {
+      timeData.subTime = 0;
+      timeData.currentMilliSecond++;
+      if (timeData.currentMilliSecond >= 1000) {
+          timeData.currentMilliSecond = 0;
+          timeData.currentSecond++;
+      }
+  }
+  timeData.subTime += (timeData.mainLoopTimeTaken);
+  timeData.subTimeDivided = timeData.subTime / 1000000;
+  // Serial.println(timeData.subTime, sizeof(timeData.subTime));
+  timeData.timestamp = timeData.currentSecond+timeData.subTimeDivided;
+  // Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
 
-  // make the string a double
-  timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME);
-  return timeData.UNIX_MICRO_TIME_I;
+  return timeData.timestamp;
+}
+
+double interCurrentTime() {
+
+  timeData.interTime = (micros() - timeData.mainLoopTimeStart);
+  timeData.interTimeDivided = timeData.interTime / 1000000;
+  // Serial.println(timeData.subTime, sizeof(timeData.subTime));
+  timeData.interTimestamp = timeData.timestamp+timeData.interTimeDivided;
+
+  // Serial.println(timeData.interTimestamp, sizeof(timeData.interTimestamp));
+
+  return timeData.interTimestamp;
 }
 
 // subprocedure for capturing events from Geiger Kit
@@ -144,7 +142,7 @@ void tubeImpulseISR() {
   else {geigerCounter.countsIter=0;}
   // add the impulse as a timestamp to array with index somewhere in range of max_count
   // if you have better performance/hardware and a 'lighter' call to retrieve more accurate time then uniquely timestamp each impulse below. but do not overload the ISR.
-  geigerCounter.countsArray[geigerCounter.countsIter] = timeData.currentTime;
+  geigerCounter.countsArray[geigerCounter.countsIter] = interCurrentTime();
 }
 
 void BGTubeImpulseISR() {
@@ -244,7 +242,7 @@ void loop() {
   // set current timestamp to be used this loop as UNIXTIME + subsecond time. this is not indended for actual time like a wrist watch.
   // also set time once per loop unless you have the hardware/perfromance to set time for each impulse with a faster/lighter timestamping method that can sit in the ISR,
   // impulses in the same loop will have the same stamp which will not effect accuracy on spikes but when those impulses expire, they will expire in the same millisecond+- depending on loop speed.
-  timeData.currentTime = current_SUBSECOND_UNIXTIME();
+  timeData.timestamp = currentTime();
 
   // Serial.print("currentTime: "); Serial.println(timeData.currentTime, 12);
 
@@ -265,25 +263,29 @@ void loop() {
     attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 
     // set previous time each minute
-    if ((timeData.currentTime - timeData.previousTime) > geigerCounter.maxPeriod) {
-      Serial.print("cycle expired: "); Serial.println(timeData.currentTime, sizeof(timeData.currentTime));
-      timeData.previousTime = timeData.currentTime;
+    if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
+      Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
+      timeData.previousTimestamp = timeData.timestamp;
       geigerCounter.warmup = false; // completed 60 second warmup required for precision
+      // delay(3000);
     }
     
     // step through the array and remove expired impulses by exluding them from our new array.
     geigerCounter.precisionCounts = 0;
     memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
+    // Serial.println("------------------------");
     for (int i = 0; i < max_count; i++) {
       if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
-        // Serial.println(String(geigerCounter.countsArray[i]) + " REMOVING");
 
+      // timeData.timestamp
+        // Serial.print("CurrentTime: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
         // if you have better performance/hardware then get current time here before comparing time (see tubeImpulseISR. tubeImpulseISR is timestamp into array, here timestamp must leave array)
-        if (((timeData.currentTime - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
+        if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
+          // Serial.print(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i])); Serial.println(" REMOVING");
           geigerCounter.countsArray[i] = 0;
           }
         else {
-          // Serial.println(String(geigerCounter.countsArray[i]));
+          // Serial.println(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i]));
           geigerCounter.precisionCounts++; // non expired counters increment the precision counter
           geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // non expired counters go into the new temporary array
         }
@@ -353,6 +355,6 @@ void loop() {
   // store time taken to complete
   timeData.mainLoopTimeTaken = micros() - timeData.mainLoopTimeStart;
   // Serial.println("timeData.mainLoopTimeTaken:" + String(timeData.mainLoopTimeTaken));
-  // delay(1000);
+  // delay(50);
 }
 
