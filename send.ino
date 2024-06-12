@@ -147,7 +147,7 @@ double current_SUBSECOND_UNIXTIME() {
 // subprocedure for capturing events from Geiger Kit
 void tubeImpulseISR() {
   geigerCounter.impulse = true;
-  if (geigerCounter.countsIter < max_count-1) {geigerCounter.countsIter++;}
+  if (geigerCounter.countsIter < max_count) {geigerCounter.countsIter++;}
   else {geigerCounter.countsIter=0;}
   // add the impulse as a timestamp to array with index somewhere in range of max_count
   // if you have better performance/hardware and a 'lighter' call to retrieve more accurate time then individually timestamp each impulse below. but do not overload the ISR
