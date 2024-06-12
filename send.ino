@@ -105,7 +105,7 @@ double current_SUBSECOND_UNIXTIME() {
   memset(timeData.subTimeStr, 0, sizeof(timeData.subTimeStr));
   memset(timeData.subTimeStrTmp, 0, sizeof(timeData.subTimeStrTmp));
 
-  // get time now from rtc
+  // get time now from rtc. this takes time to call so compile your own seconds/minutes/etc from micros if time is of concern. 
   DateTime time = rtc.now();
 
   // convert unix time integer to unix time string
