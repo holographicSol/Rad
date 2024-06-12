@@ -83,22 +83,14 @@ GCStruct geigerCounter;
 
 struct TimeStruct {
   double UNIX_MICRO_TIME_I;
-  double PREVIOUS_UNIX_MICRO_TIME_I;
   char UNIX_MICRO_TIME[20];
-  char PREVIOUS_UNIX_MICRO_TIME[20];
-  double microsI;
-  double microsF;
   char microsStr[20];
   char microsStrTmp[20];
-  char unixtStr[20];
   double currentTime;                          // a placeholder for a current time (optionally used)
   double previousTime;                         // a placeholder for a previous time (optionally used)
   unsigned long microLoopTimeTaken;                   // necessary to count time less than a second (must be updated every loop of main)
   unsigned long microLoopTimeStart;                   // necessary for loop time taken (must be recorded every loop of main)
-  unsigned long microAccumulator;                     // accumulates loop time take and resets at threshold (must accumulate every loop of main)
-  unsigned long microAccumulatorThreshold = 1000000;  // micro accumulator resets to zero when the threshold is reached (10^6 or any other number say if you dont need current time)
   unsigned long microseconds = 0;
-  unsigned long microMultiplier = 0;
   int previousSecond = 0;
   int currentSecond = 0;
   char microsStrTag[20] = ".";
