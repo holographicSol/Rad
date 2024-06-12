@@ -266,7 +266,7 @@ void loop() {
         if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
         // compare current timestamp to timestamps in array, each time getting new current time (more or less precise each compare)
         // if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-          Serial.print(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i])); Serial.println(" REMOVING");
+          // Serial.print(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i])); Serial.println(" REMOVING");
           geigerCounter.countsArray[i] = 0;
           }
         else {
