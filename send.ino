@@ -54,8 +54,8 @@ PayloadStruct payload;
 
 // Geiger Counter
 struct GCStruct {
-  int countsArray[max_count]; // stores each impulse as micros
-  int countsArrayTemp[max_count]; // temporarily stores micros from countsArray that have not yet expired
+  int countsArray[max_count]; // stores each impulse as timestamps
+  int countsArrayTemp[max_count]; // temporarily stores timestamps from countsArray that have not yet expired
   bool impulse = false; // sets true each interrupt on geiger counter pin
   bool warmup = true; // sets false after first 60 seconds have passed
   unsigned long counts; // stores counts and resets to zero every minute
@@ -63,7 +63,7 @@ struct GCStruct {
   unsigned long CPM = 0; // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
   char CPM_str[12];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
-  unsigned long maxPeriod = 60; // maximum logging period in seconds (microseconds). Should always be 60 (60,000,000 for one minute)
+  unsigned long maxPeriod = 60; // maximum logging period in seconds.
   unsigned long CPM_BURST_GUAGE_LOG_PERIOD = 15000; // Logging period in milliseconds, recommended value 15000-60000.
   unsigned long CPM_BURST_GUAGE_MAX_PERIOD = 60000; // Maximum logging period without modifying this sketch. default 60000.
   unsigned long cpm_high;
@@ -84,26 +84,26 @@ GCStruct geigerCounter;
 struct TimeStruct {
   double UNIX_MICRO_TIME_I;
   char UNIX_MICRO_TIME[20];
-  char microsStr[20];
-  char microsStrTmp[20];
+  char subTimeStr[20];
+  char subTimeStrTmp[20];
   double currentTime; // a placeholder for a current time (optionally used)
   double previousTime; // a placeholder for a previous time (optionally used)
-  unsigned long microLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
-  unsigned long microLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
-  unsigned long microseconds = 0;
+  unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
+  unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
+  unsigned long subTime = 0;
   int previousSecond = 0;
   int currentSecond = 0;
-  char microsStrTag[20] = ".";
+  char subTimeStrTag[20] = ".";
 };
 TimeStruct timeData;
 
-// concatinates unix time and micros to make timestamps. time resolution is predicated upon loop time and is not meant to be accurate, just unique compared to other times.
+// concatinates unix time and 'subTime' to make timestamps. time resolution is predicated upon loop time and is not meant to be accurate, just unique compared to other times.
 // ToDo: timestamp faster
 double current_SUBSECOND_UNIXTIME() {
 
   // clear strings
-  memset(timeData.microsStr, 0, sizeof(timeData.microsStr));
-  memset(timeData.microsStrTmp, 0, sizeof(timeData.microsStrTmp));
+  memset(timeData.subTimeStr, 0, sizeof(timeData.subTimeStr));
+  memset(timeData.subTimeStrTmp, 0, sizeof(timeData.subTimeStrTmp));
 
   // get time now from rtc
   DateTime time = rtc.now();
@@ -111,25 +111,26 @@ double current_SUBSECOND_UNIXTIME() {
   // convert unix time integer to unix time string
   dtostrf((unsigned long)time.unixtime(), 0, 0, timeData.UNIX_MICRO_TIME);
 
-  // each new second reset microseconds to zero and multiplier back to one
+  // each new second reset subTime to zero and multiplier back to one
   timeData.currentSecond = time.second();
   if (timeData.previousSecond != timeData.currentSecond) {
     timeData.previousSecond = timeData.currentSecond;
-    timeData.microseconds = 0;
+    timeData.subTime = 0;
   }
-  timeData.microseconds+=(timeData.microLoopTimeTaken);
+  // note that sub time is always in micros, name subTime avoids need for refactoring in different scenarios
+  timeData.subTime+=(timeData.mainLoopTimeTaken);
 
-  // convert microseconds to string
-  sprintf(timeData.microsStrTmp, "%d", timeData.microseconds);
+  // convert subTime to string
+  sprintf(timeData.subTimeStrTmp, "%d", timeData.subTime);
 
-  // concatinate empty microsStr with tag
-  strcat(timeData.microsStr, timeData.microsStrTag);
+  // concatinate empty subTimeStr with tag
+  strcat(timeData.subTimeStr, timeData.subTimeStrTag);
 
-  // concatinate microsStr with microsecond string temp
-  strcat(timeData.microsStr, timeData.microsStrTmp);
+  // concatinate subTimeStr with subTime string temp
+  strcat(timeData.subTimeStr, timeData.subTimeStrTmp);
   
-  // concatinate unix time with microsecond string
-  strcat(timeData.UNIX_MICRO_TIME, timeData.microsStr);
+  // concatinate unix time with subTime string
+  strcat(timeData.UNIX_MICRO_TIME, timeData.subTimeStr);
 
   // make the string a double
   timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME);
@@ -157,7 +158,7 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
     display->setTextAlignment(TEXT_ALIGN_CENTER);
 
     if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
-    else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
+    else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
     display->drawString(display->getWidth()/2, 25, "cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
     display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
@@ -166,7 +167,7 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   else if (geigerCounter.GCMODE == 3) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
     if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
-    else {display->drawString(display->getWidth()/2, 0, String(timeData.microLoopTimeTaken));}
+    else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
     display->drawString(display->getWidth()/2, 25, "cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
     display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
@@ -237,8 +238,8 @@ void setup() {
 
 
 void loop() {
-  // store current time in micros to measure this loop time so we know how quickly items are added/removed from counts arrays
-  timeData.microLoopTimeStart = micros();
+  // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
+  timeData.mainLoopTimeStart = micros();
 
   // set current timestamp to be used this loop as UNIXTIME + subsecond time. this is not indended for actual time like a wrist watch.
   // also set time once per loop unless you have the hardware/perfromance to set time for each impulse with a faster/lighter timestamping method that can sit in the ISR,
@@ -350,8 +351,8 @@ void loop() {
   radio.write(&payload, sizeof(payload));
 
   // store time taken to complete
-  timeData.microLoopTimeTaken = micros() - timeData.microLoopTimeStart;
-  // Serial.println("timeData.microLoopTimeTaken:" + String(timeData.microLoopTimeTaken));
+  timeData.mainLoopTimeTaken = micros() - timeData.mainLoopTimeStart;
+  // Serial.println("timeData.mainLoopTimeTaken:" + String(timeData.mainLoopTimeTaken));
   // delay(1000);
 }
 
