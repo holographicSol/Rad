@@ -2,17 +2,17 @@
 
 // Include the correct display library
 // For a connection via I2C using Wire include
-#include <Wire.h>         // Only needed for Arduino 1.6.5 and earlier
-#include "SSD1306Wire.h"  // legacy include: `#include "SSD1306.h"`
+#include <Wire.h> // Only needed for Arduino 1.6.5 and earlier
+#include <SSD1306Wire.h> // legacy include: `#include "SSD1306.h"`
 #include <math.h>
 #include <stdio.h>
 #include <Arduino.h>
 #include <SPI.h>
 #include <HardwareSerial.h>
-#include "printf.h"
-#include "RF24.h"
-#include "OLEDDisplayUi.h"
-#include "RTClib.h"
+#include <printf.h>
+#include <RF24.h>
+#include <OLEDDisplayUi.h>
+#include <RTClib.h>
 #include <stdlib.h>
 
 // memory limitations require counts log max. default for esp32: 10240. this value dramatically effects performance of main loop time.
@@ -22,8 +22,8 @@
 // if instead you are actually trying to get as precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase max count from 10240
 // providing you beleive there is the memory and performance available on the MCU your building for.
 #define max_count 10240
-#define CE_PIN 25        // radio can use tx
-#define CSN_PIN 26       // radio can use rx
+#define CE_PIN 25 // radio can use tx
+#define CSN_PIN 26 // radio can use rx
 #define GEIGER_PIN 27
 
 volatile bool state = LOW;
