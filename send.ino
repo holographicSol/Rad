@@ -21,7 +21,7 @@
 // it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in is reacting to a precise cpm reading within the shortest time you can.
 // if instead you are actually trying to get as precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase max count from 10240
 // providing you beleive there is the memory and performance available on the MCU your building for.
-#define max_count 6000
+#define max_count 100
 #define CE_PIN 25 // radio can use tx
 #define CSN_PIN 26 // radio can use rx
 #define GEIGER_PIN 27
@@ -76,7 +76,6 @@ struct GCStruct {
   unsigned int cpm_arr_itter = 0;
   int cpms[6]={0,0,0,0,0,0};
   float cpm_average;
-  int GCMODE = 2;
   unsigned long countsIter;
 };
 GCStruct geigerCounter;
@@ -138,26 +137,13 @@ void BGTubeImpulseISR() {
 
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  if (geigerCounter.GCMODE == 2) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
-
     if (geigerCounter.CPM >= warning_level_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
     else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
     display->drawString(display->getWidth()/2, 25, "cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
     display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
     display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
-  }
-  else if (geigerCounter.GCMODE == 3) {
-    display->setTextAlignment(TEXT_ALIGN_CENTER);
-
-    if (geigerCounter.CPM >= warning_level_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
-    else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
-    display->drawString(display->getWidth()/2, 25, "estimating cpm");
-    display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
-    display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
-    display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
-  }
 }
 
 // this array keeps function pointers to all frames are the single views that slide in
@@ -244,34 +230,21 @@ void loop() {
     }
   }
 
-  // optionally start estimating cpm if cpm higher than max reading 
-  if (geigerCounter.CPM >= max_count) {geigerCounter.GCMODE = 3;}
-  else {geigerCounter.GCMODE = 2;}
-  
-  // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
-  if (geigerCounter.GCMODE == 2) {
-  detachInterrupt(GEIGER_PIN);
-  attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
-
   // set previous time each minute
   if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
     Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
     timeData.previousTimestamp = timeData.timestamp;
     geigerCounter.warmup = false; // completed 60 second warmup required for precision
   }
-  
   // step through the array and remove expired impulses by exluding them from our new array.
   geigerCounter.precisionCounts = 0;
   memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
   for (int i = 0; i < max_count; i++) {
     if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
-
       // compare current timestamp (per loop) to timestamps in array
       if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-
       // compare current (unique) timestamp to timestamps in array
       // if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-
         geigerCounter.countsArray[i] = 0;
         }
       else {
@@ -286,34 +259,6 @@ void loop() {
   // then calculate usv/h
   geigerCounter.CPM = geigerCounter.precisionCounts;
   geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
-  }
-  
-  // cpm burst guage (estimates cpm reactively with a dynamic time window in order to update values and peripherals responsively)
-  // the impulse measurement time window increases and decreases inversely proportional to current counts. counting slow takes time to update values, count to fast and you cant measure low activity,
-  // so the cpm burst guage does both, responsively and inversely proportional to counts. higher counts means smaller time window, lower counts meanse larger time window.
-  // this allows for estimated readings outside the memory limitations of any given give MCU this sketch is running on.
-  else if (geigerCounter.GCMODE == 3) {
-    detachInterrupt(GEIGER_PIN);
-    attachInterrupt(GEIGER_PIN, BGTubeImpulseISR, FALLING); // define external interrupts
-    // cpm burst guage
-    geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 1000000;
-    geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000000;
-    if (geigerCounter.counts >= 1) {
-      geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 1000000 / geigerCounter.counts;
-      geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000000 / geigerCounter.counts;
-      geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = (unsigned long)(geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD);
-      geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = (unsigned long)(geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD);
-    }
-    geigerCounter.currentMillis = micros();
-    if(geigerCounter.currentMillis - geigerCounter.previousMillis > geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD){
-      geigerCounter.previousMillis = geigerCounter.currentMillis;
-      geigerCounter.multiplier = geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD / geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD; // calculating multiplier, depend on your log period
-      geigerCounter.multiplier = (unsigned int)(geigerCounter.multiplier);
-      geigerCounter.CPM = geigerCounter.counts * geigerCounter.multiplier;
-      geigerCounter.uSvh = geigerCounter.CPM * 0.00332; // multiply cpm by 0.003321969697 for geiger muller tube J305
-    geigerCounter.counts = 0;
-    }
-  }
 
   // refresh ssd1306 128x64 display
   ui.update();
