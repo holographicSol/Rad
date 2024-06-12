@@ -42,8 +42,6 @@ Requirements:
 
 2x SSD1306 128x64 OLED modules.
 
-1x DS3231 High Precision RTC.
-
 
 ![plot](./resources/Rad_Transceivers.JPG)
 
