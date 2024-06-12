@@ -141,7 +141,6 @@ void tubeImpulseISR() {
   if (geigerCounter.countsIter < max_count) {geigerCounter.countsIter++;}
   else {geigerCounter.countsIter=0;}
   // add the impulse as a timestamp to array with index somewhere in range of max_count
-  // if you have better performance/hardware and a 'lighter' call to retrieve more accurate time then uniquely timestamp each impulse below. but do not overload the ISR.
   geigerCounter.countsArray[geigerCounter.countsIter] = interCurrentTime();
 }
 
@@ -239,9 +238,7 @@ void loop() {
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.mainLoopTimeStart = micros();
 
-  // set current timestamp to be used this loop as UNIXTIME + subsecond time. this is not indended for actual time like a wrist watch.
-  // also set time once per loop unless you have the hardware/perfromance to set time for each impulse with a faster/lighter timestamping method that can sit in the ISR,
-  // impulses in the same loop will have the same stamp which will not effect accuracy on spikes but when those impulses expire, they will expire in the same millisecond+- depending on loop speed.
+  // set current timestamp to be used this loop same millisecond+- depending on loop speed.
   timeData.timestamp = currentTime();
 
   // Serial.print("currentTime: "); Serial.println(timeData.currentTime, 12);
@@ -277,9 +274,7 @@ void loop() {
     for (int i = 0; i < max_count; i++) {
       if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
 
-      // timeData.timestamp
-        // Serial.print("CurrentTime: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
-        // if you have better performance/hardware then get current time here before comparing time (see tubeImpulseISR. tubeImpulseISR is timestamp into array, here timestamp must leave array)
+        // compare current timestamp to timestamps in array, each time getting new current time
         if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
           // Serial.print(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i])); Serial.println(" REMOVING");
           geigerCounter.countsArray[i] = 0;
