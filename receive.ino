@@ -54,10 +54,9 @@ GCStruct geigerCounter;
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-
   if (geigerCounter.CPM >= warning_level_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
-  if (geigerCounter.CPM >= max_count) {display->drawString(display->getWidth()/2, 25, "estimating cpm");}
-  else {display->drawString(display->getWidth()/2, 25, "cpm");}
+  else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
+  display->drawString(display->getWidth()/2, 25, "cpm");
   display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
   display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
   display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
