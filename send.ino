@@ -117,7 +117,7 @@ double current_SUBSECOND_UNIXTIME() {
     timeData.previousSecond = timeData.currentSecond;
     timeData.subTime = 0;
   }
-  // note that sub time is always in micros, name subTime avoids need for refactoring in different scenarios
+  // note that name subTime avoids need for refactoring making mainLoopTimeTaken units of time more flexible
   timeData.subTime+=(timeData.mainLoopTimeTaken);
 
   // convert subTime to string
