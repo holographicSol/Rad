@@ -76,7 +76,6 @@ struct GCStruct {
   int cpms[6]={0,0,0,0,0,0};
   float cpm_average;
   int GCMODE = 2;
-  signed long previousCounts;
   unsigned long countsIter;
 };
 GCStruct geigerCounter;
@@ -84,19 +83,13 @@ GCStruct geigerCounter;
 struct TimeStruct {
   // double currentTime; // a placeholder for a current time (optionally used)
   double previousTimestamp; // a placeholder for a previous time (optionally used)
-  unsigned long currentSubTime;
   unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
   unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
   double subTime;
   double subTimeDivided;
   double interTimeDivided;
-  double interTimestamp;
   unsigned long currentMilliSecond;
-  unsigned long currentMinute;
-  unsigned long previousSecond;
-  unsigned long currentSecond;
   double timestamp;
-  unsigned long currentHour;
   double interTime;
 };
 TimeStruct timeData;
@@ -131,7 +124,7 @@ void tubeImpulseISR() {
 
   // add current timestamp (per loop) to timestamps in array
   geigerCounter.countsArray[geigerCounter.countsIter] = timeData.timestamp;
-  
+
   // compare current (unique) timestamp to timestamps in array
   // geigerCounter.countsArray[geigerCounter.countsIter] = interCurrentTime();
 }
@@ -256,7 +249,6 @@ void loop() {
       Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
       timeData.previousTimestamp = timeData.timestamp;
       geigerCounter.warmup = false; // completed 60 second warmup required for precision
-      // delay(3000);
     }
     
     // step through the array and remove expired impulses by exluding them from our new array.
