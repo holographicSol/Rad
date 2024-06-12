@@ -64,8 +64,8 @@ struct GCStruct {
   char CPM_str[12];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60; // maximum logging period in seconds.
-  unsigned long CPM_BURST_GUAGE_LOG_PERIOD = 15000; // Logging period in milliseconds, recommended value 15000-60000.
-  unsigned long CPM_BURST_GUAGE_MAX_PERIOD = 60000; // Maximum logging period without modifying this sketch. default 60000.
+  unsigned long CPM_BURST_GUAGE_LOG_PERIOD = 1000000; // Logging period in milliseconds, recommended value 15000-60000. (currently)
+  unsigned long CPM_BURST_GUAGE_MAX_PERIOD = 60000000; // Maximum logging period without modifying this sketch. default 60000.
   unsigned long cpm_high;
   unsigned long cpm_low;
   unsigned long previousMillis; // variable for time measurement
@@ -149,9 +149,10 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   }
   else if (geigerCounter.GCMODE == 3) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
+
     if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
     else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
-    display->drawString(display->getWidth()/2, 25, "cpm");
+    display->drawString(display->getWidth()/2, 25, "estimating cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
     display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
     display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
@@ -241,6 +242,9 @@ void loop() {
       radio.write(&payload, sizeof(payload));
     }
   }
+
+  if (geigerCounter.CPM >= max_count) {geigerCounter.GCMODE = 3;}
+  else {geigerCounter.GCMODE = 2;}
   
   // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
   if (geigerCounter.GCMODE == 2) {
@@ -285,41 +289,26 @@ void loop() {
   // cpm burst guage (estimates cpm reactively with a dynamic time window in order to update values and peripherals responsively)
   // the impulse measurement time window increases and decreases inversely proportional to current counts. counting slow takes time to update values, count to fast and you cant measure low activity,
   // so the cpm burst guage does both, responsively and inversely proportional to counts. higher counts means smaller time window, lower counts meanse larger time window.
+  // this allows for estimated readings outside the memory limitations of any given give MSU this sketch is running on.
   else if (geigerCounter.GCMODE == 3) {
     detachInterrupt(GEIGER_PIN);
     attachInterrupt(GEIGER_PIN, BGTubeImpulseISR, FALLING); // define external interrupts
     // cpm burst guage
-    geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 15000;
-    geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000;
+    geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 1000000;
+    geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000000;
     if (geigerCounter.counts >= 1) {
-      geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 15000 / geigerCounter.counts;
-      geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000 / geigerCounter.counts;
+      geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = 1000000 / geigerCounter.counts;
+      geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = 60000000 / geigerCounter.counts;
       geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD = (unsigned long)(geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD);
       geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD = (unsigned long)(geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD);
     }
-    // store highs and lows
-    if (geigerCounter.CPM > geigerCounter.cpm_high) {geigerCounter.cpm_high = geigerCounter.CPM;};
-    if ((geigerCounter.CPM < geigerCounter.cpm_low) && (geigerCounter.CPM >= 1)) {geigerCounter.cpm_low = geigerCounter.CPM;};
-    // check the variable time window
-    geigerCounter.currentMillis = millis();
+    geigerCounter.currentMillis = micros();
     if(geigerCounter.currentMillis - geigerCounter.previousMillis > geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD){
       geigerCounter.previousMillis = geigerCounter.currentMillis;
       geigerCounter.multiplier = geigerCounter.CPM_BURST_GUAGE_MAX_PERIOD / geigerCounter.CPM_BURST_GUAGE_LOG_PERIOD; // calculating multiplier, depend on your log period
       geigerCounter.multiplier = (unsigned int)(geigerCounter.multiplier);
       geigerCounter.CPM = geigerCounter.counts * geigerCounter.multiplier;
       geigerCounter.uSvh = geigerCounter.CPM * 0.00332; // multiply cpm by 0.003321969697 for geiger muller tube J305
-      int i;
-      float sum = 0;
-      if (geigerCounter.cpm_arr_itter <= geigerCounter.cpm_arr_max) {geigerCounter.cpms[geigerCounter.cpm_arr_itter]=geigerCounter.cpm_high; Serial.println("[" + String(geigerCounter.cpm_arr_itter) + "] " + String(geigerCounter.cpms[geigerCounter.cpm_arr_itter])); geigerCounter.cpm_arr_itter++;}
-      if (geigerCounter.cpm_arr_itter == geigerCounter.cpm_arr_max) {
-        // average between lowest high and highest high (so far the more prefferable)
-        for(i = 0; i < 3; i++) {sum = sum + geigerCounter.cpms[i];}
-        geigerCounter.cpm_average = sum/3.0;
-        geigerCounter.cpm_average = (long int)geigerCounter.cpm_average;
-        Serial.println("cpm_average: " + String(geigerCounter.cpm_average));
-        geigerCounter.uSvh = geigerCounter.cpm_average * 0.00332;
-        geigerCounter.cpm_high=0; geigerCounter.cpm_low=0; geigerCounter.cpm_arr_itter = 0;
-      }
     geigerCounter.counts = 0;
     }
   }
