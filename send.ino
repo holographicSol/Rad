@@ -128,8 +128,12 @@ void tubeImpulseISR() {
   geigerCounter.impulse = true;
   if (geigerCounter.countsIter < max_count) {geigerCounter.countsIter++;}
   else {geigerCounter.countsIter=0;}
-  // add the impulse as a timestamp to array with index somewhere in range of max_count
-  geigerCounter.countsArray[geigerCounter.countsIter] = interCurrentTime();
+
+  // add current timestamp (per loop) to timestamps in array
+  geigerCounter.countsArray[geigerCounter.countsIter] = timeData.timestamp;
+  
+  // compare current (unique) timestamp to timestamps in array
+  // geigerCounter.countsArray[geigerCounter.countsIter] = interCurrentTime();
 }
 
 void BGTubeImpulseISR() {
@@ -258,19 +262,18 @@ void loop() {
     // step through the array and remove expired impulses by exluding them from our new array.
     geigerCounter.precisionCounts = 0;
     memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
-    // Serial.println("------------------------");
     for (int i = 0; i < max_count; i++) {
       if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
 
-        // compare current timestamp to timestamps in array, each time using timestamp set in the beginning of this loop (faster)
+        // compare current timestamp (per loop) to timestamps in array
         if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-        // compare current timestamp to timestamps in array, each time getting new current time (more or less precise each compare)
+
+        // compare current (unique) timestamp to timestamps in array
         // if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-          // Serial.print(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i])); Serial.println(" REMOVING");
+
           geigerCounter.countsArray[i] = 0;
           }
         else {
-          // Serial.println(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i]));
           geigerCounter.precisionCounts++; // non expired counters increment the precision counter
           geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // non expired counters go into the new temporary array
         }
