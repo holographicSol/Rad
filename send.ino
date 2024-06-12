@@ -91,6 +91,7 @@ struct TimeStruct {
   unsigned long currentMilliSecond;
   double timestamp;
   double interTime;
+  unsigned long currentSecond;
 };
 TimeStruct timeData;
 
@@ -215,7 +216,7 @@ void setup() {
   radio.openReadingPipe(1, address[0]); // using pipe 1
   radio.stopListening();
 
-  // attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
+  attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
 
 
@@ -241,47 +242,47 @@ void loop() {
   
   // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
   if (geigerCounter.GCMODE == 2) {
-    detachInterrupt(GEIGER_PIN);
-    attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
+  detachInterrupt(GEIGER_PIN);
+  attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 
-    // set previous time each minute
-    if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
-      Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
-      timeData.previousTimestamp = timeData.timestamp;
-      geigerCounter.warmup = false; // completed 60 second warmup required for precision
-    }
-    
-    // step through the array and remove expired impulses by exluding them from our new array.
-    geigerCounter.precisionCounts = 0;
-    memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
-    for (int i = 0; i < max_count; i++) {
-      if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
-
-        // compare current timestamp (per loop) to timestamps in array
-        if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-
-        // compare current (unique) timestamp to timestamps in array
-        // if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-
-          geigerCounter.countsArray[i] = 0;
-          }
-        else {
-          geigerCounter.precisionCounts++; // non expired counters increment the precision counter
-          geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // non expired counters go into the new temporary array
-        }
-      }
-    }
-    memset(geigerCounter.countsArray, 0, sizeof(geigerCounter.countsArray));
-    memcpy(geigerCounter.countsArray, geigerCounter.countsArrayTemp, sizeof(geigerCounter.countsArray));
-
-    // then calculate usv/h
-    geigerCounter.CPM = geigerCounter.precisionCounts;
-    geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
+  // set previous time each minute
+  if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
+    Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
+    timeData.previousTimestamp = timeData.timestamp;
+    geigerCounter.warmup = false; // completed 60 second warmup required for precision
   }
   
-  // cpm burst guage (estimates cpm reactively with a dynamic time window in order to update values and peripherals responsively)
-  // the impulse measurement time window increases and decreases inversely proportional to current counts. counting slow takes time to update values, count to fast and you cant measure low activity,
-  // so the cpm burst guage does both, responsively and inversely proportional to counts. higher counts means smaller time window, lower counts meanse larger time window.
+  // step through the array and remove expired impulses by exluding them from our new array.
+  geigerCounter.precisionCounts = 0;
+  memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
+  for (int i = 0; i < max_count; i++) {
+    if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
+
+      // compare current timestamp (per loop) to timestamps in array
+      if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
+
+      // compare current (unique) timestamp to timestamps in array
+      // if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
+
+        geigerCounter.countsArray[i] = 0;
+        }
+      else {
+        geigerCounter.precisionCounts++; // non expired counters increment the precision counter
+        geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // non expired counters go into the new temporary array
+      }
+    }
+  }
+  memset(geigerCounter.countsArray, 0, sizeof(geigerCounter.countsArray));
+  memcpy(geigerCounter.countsArray, geigerCounter.countsArrayTemp, sizeof(geigerCounter.countsArray));
+
+  // then calculate usv/h
+  geigerCounter.CPM = geigerCounter.precisionCounts;
+  geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
+  }
+  
+  cpm burst guage (estimates cpm reactively with a dynamic time window in order to update values and peripherals responsively)
+  the impulse measurement time window increases and decreases inversely proportional to current counts. counting slow takes time to update values, count to fast and you cant measure low activity,
+  so the cpm burst guage does both, responsively and inversely proportional to counts. higher counts means smaller time window, lower counts meanse larger time window.
   else if (geigerCounter.GCMODE == 3) {
     detachInterrupt(GEIGER_PIN);
     attachInterrupt(GEIGER_PIN, BGTubeImpulseISR, FALLING); // define external interrupts
