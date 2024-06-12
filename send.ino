@@ -15,9 +15,12 @@
 #include "RTClib.h"
 #include <stdlib.h>
 
-// memory limitations require counts log max (todo: increase max) default for esp32: 10240. this value dramatically effects performance of main loop time.
+// memory limitations require counts log max. default for esp32: 10240. this value dramatically effects performance of main loop time.
 // larger buffer means higher max cpm reading, lower buffer means faster loop time but lower max cpm reading, at least on many MCU's this is worth considering.
 // on esp32 a maxcount of 100 should mean main loop time will be half the time of main loop time with max count 10240.
+// it may be preferrable to have a max count <=100 (cpm 100 considered unsafe) if all you are interested in is reacting to a precise cpm reading withing the shortest time you can.
+// if instead you are actually trying to get as precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase max count from 10240
+// providing you beleive there is the memory and performance available on the MCU your building for.
 #define max_count 10240
 #define CE_PIN 25        // radio can use tx
 #define CSN_PIN 26       // radio can use rx
