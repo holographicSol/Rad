@@ -15,7 +15,7 @@
 #include <RTClib.h>
 #include <stdlib.h>
 
-// memory limitations require counts log max. default for esp32: 10240. this value dramatically effects performance of main loop time.
+// memory limitations require counts log max. this value dramatically effects performance of main loop time.
 // larger buffer means higher max cpm reading, lower buffer means faster loop time but lower max cpm reading, at least on many MCU's this trade off is worth considering.
 // on esp32 a maxcount of 100 should mean main loop time will be half the time of main loop time with max count 10240.
 // it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in is reacting to a precise cpm reading within the shortest time you can.
