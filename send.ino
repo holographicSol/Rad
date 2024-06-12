@@ -26,14 +26,12 @@
 #define CSN_PIN 26 // radio can use rx
 #define GEIGER_PIN 27
 
-volatile bool state = LOW;
+volatile bool broadcast = false;
 
 RTC_DS1307 rtc;
 RF24 radio(CE_PIN, CSN_PIN);
 SSD1306Wire display(0x3c, SDA, SCL);
 OLEDDisplayUi ui(&display);
-
-char serialBuffer[16];
 
 // Radio Addresses
 uint64_t address[6] = { 0x7878787878LL,
@@ -233,11 +231,13 @@ void loop() {
   if (geigerCounter.impulse == true) {
     geigerCounter.impulse = false;
 
-    // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
-    memset(payload.message, 0, 12);
-    memcpy(payload.message, "X", 1);
-    payload.payloadID = 1000;
-    radio.write(&payload, sizeof(payload));
+    if (broadcast == true) {
+      // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
+      memset(payload.message, 0, 12);
+      memcpy(payload.message, "X", 1);
+      payload.payloadID = 1000;
+      radio.write(&payload, sizeof(payload));
+    }
   }
   
   // use precision cpm counter (measures actual cpm to as higher resolution as it can per minute)
@@ -326,16 +326,17 @@ void loop() {
   ui.update();
 
   // transmit the results
-  memset(payload.message, 0, 12);
-  memset(geigerCounter.CPM_str, 0, 12);
-  dtostrf(geigerCounter.CPM, 0, 4, geigerCounter.CPM_str);
-  memcpy(payload.message, geigerCounter.CPM_str, sizeof(geigerCounter.CPM_str));
-  payload.payloadID = 1111;
-  radio.write(&payload, sizeof(payload));
+  if (broadcast == true) {
+    memset(payload.message, 0, 12);
+    memset(geigerCounter.CPM_str, 0, 12);
+    dtostrf(geigerCounter.CPM, 0, 4, geigerCounter.CPM_str);
+    memcpy(payload.message, geigerCounter.CPM_str, sizeof(geigerCounter.CPM_str));
+    payload.payloadID = 1111;
+    radio.write(&payload, sizeof(payload));
+  }
 
   // store time taken to complete
   timeData.mainLoopTimeTaken = micros() - timeData.mainLoopTimeStart;
   // Serial.println("timeData.mainLoopTimeTaken:" + String(timeData.mainLoopTimeTaken));
-  // delay(50);
 }
 
