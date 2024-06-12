@@ -26,7 +26,7 @@
 #define CSN_PIN 26 // radio can use rx
 #define GEIGER_PIN 27
 
-volatile bool broadcast = false;
+volatile bool broadcast = true;
 
 RTC_DS1307 rtc;
 RF24 radio(CE_PIN, CSN_PIN);
