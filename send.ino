@@ -25,6 +25,7 @@
 #define CE_PIN 25 // radio can use tx
 #define CSN_PIN 26 // radio can use rx
 #define GEIGER_PIN 27
+#define warning_level_0 99 // warn at this cpm 
 
 // on esp32 if broadcast false then precision is to approximately 40 microseconds at around 35 cpm with max_count 100.
 // on esp32 if broadcast true then precision is to approximately 700 microseconds at around 35 cpm with max_count 100.
@@ -140,7 +141,7 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   if (geigerCounter.GCMODE == 2) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
 
-    if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+    if (geigerCounter.CPM >= warning_level_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
     else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
     display->drawString(display->getWidth()/2, 25, "cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
@@ -150,7 +151,7 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   else if (geigerCounter.GCMODE == 3) {
     display->setTextAlignment(TEXT_ALIGN_CENTER);
 
-    if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+    if (geigerCounter.CPM >= warning_level_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
     else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
     display->drawString(display->getWidth()/2, 25, "estimating cpm");
     display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
