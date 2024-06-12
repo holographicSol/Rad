@@ -244,6 +244,7 @@ void loop() {
     }
   }
 
+  // optionally start estimating cpm if cpm higher than max reading 
   if (geigerCounter.CPM >= max_count) {geigerCounter.GCMODE = 3;}
   else {geigerCounter.GCMODE = 2;}
   
