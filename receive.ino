@@ -6,8 +6,10 @@
 #include "RF24.h"
 #include "OLEDDisplayUi.h"
 
+#define max_count 100
 #define CE_PIN 25 // radio can use tx
 #define CSN_PIN 26 // radio can use rx
+#define warning_level_0 99 // warn at this cpm 
 
 SSD1306Wire display(0x3c, SDA, SCL);
 OLEDDisplayUi ui ( &display );
@@ -53,8 +55,9 @@ GCStruct geigerCounter;
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
 
-  if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
-  display->drawString(display->getWidth()/2, 25, "cpm");
+  if (geigerCounter.CPM >= warning_level_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+  if (geigerCounter.CPM >= max_count) {display->drawString(display->getWidth()/2, 25, "estimating cpm");}
+  else {display->drawString(display->getWidth()/2, 25, "cpm");}
   display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
   display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
   display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
