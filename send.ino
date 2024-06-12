@@ -16,7 +16,7 @@
 #include <stdlib.h>
 
 // memory limitations require counts log max. default for esp32: 10240. this value dramatically effects performance of main loop time.
-// larger buffer means higher max cpm reading, lower buffer means faster loop time but lower max cpm reading, at least on many MCU's this is worth considering.
+// larger buffer means higher max cpm reading, lower buffer means faster loop time but lower max cpm reading, at least on many MCU's this trade off is worth considering.
 // on esp32 a maxcount of 100 should mean main loop time will be half the time of main loop time with max count 10240.
 // it may be preferrable to have a max count <=100 (cpm 100 considered unsafe) if all you are interested in is reacting to a precise cpm reading withing the shortest time you can.
 // if instead you are actually trying to get as precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase max count from 10240
@@ -129,19 +129,15 @@ double current_SUBSECOND_UNIXTIME() {
 
   // convert microseconds to string
   sprintf(timeData.microsStrTmp, "%d", timeData.microseconds);
-  // Serial.print("microsStrTmp: "); Serial.println(timeData.microsStrTmp);
 
   // concatinate empty microsStr with tag
   strcat(timeData.microsStr, timeData.microsStrTag);
-  // Serial.print("microsStr_0: "); Serial.println(timeData.microsStr);
 
   // concatinate microsStr with microsecond string temp
   strcat(timeData.microsStr, timeData.microsStrTmp);
-  // Serial.print("microsStr_1: "); Serial.println(timeData.microsStr);
   
   // concatinate unix time with microsecond string
   strcat(timeData.UNIX_MICRO_TIME, timeData.microsStr);
-  // Serial.print("UNIX_MICRO_TIME: "); Serial.println(timeData.UNIX_MICRO_TIME);
 
   // make the string a double
   timeData.UNIX_MICRO_TIME_I = atof(timeData.UNIX_MICRO_TIME);
@@ -151,11 +147,11 @@ double current_SUBSECOND_UNIXTIME() {
 // subprocedure for capturing events from Geiger Kit
 void tubeImpulseISR() {
   geigerCounter.impulse = true;
+  if (geigerCounter.countsIter < max_count-1) {geigerCounter.countsIter++;}
+  else {geigerCounter.countsIter=0;}
   // add the impulse as a timestamp to array with index somewhere in range of max_count
   // if you have better performance/hardware and a 'lighter' call to retrieve more accurate time then individually timestamp each impulse below. but do not overload the ISR
   geigerCounter.countsArray[geigerCounter.countsIter] = timeData.currentTime;
-  if (geigerCounter.countsIter < max_count-1) {geigerCounter.countsIter++;}
-  else {geigerCounter.countsIter=0;}
 }
 
 void BGTubeImpulseISR() {
