@@ -103,7 +103,6 @@ TimeStruct timeData;
 
 // create a timestamp
 double currentTime() {
-  
   if (timeData.subTime >= 1000) {
       timeData.subTime = 0;
       timeData.currentMilliSecond++;
@@ -114,24 +113,14 @@ double currentTime() {
   }
   timeData.subTime += (timeData.mainLoopTimeTaken);
   timeData.subTimeDivided = timeData.subTime / 1000000;
-  // Serial.println(timeData.subTime, sizeof(timeData.subTime));
-  timeData.timestamp = timeData.currentSecond+timeData.subTimeDivided;
-  // Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
-
-  return timeData.timestamp;
+  return timeData.currentSecond+timeData.subTimeDivided;
 }
 
 // create an intermediary timestamp
 double interCurrentTime() {
-
   timeData.interTime = (micros() - timeData.mainLoopTimeStart);
   timeData.interTimeDivided = timeData.interTime / 1000000;
-  // Serial.println(timeData.subTime, sizeof(timeData.subTime));
-  timeData.interTimestamp = timeData.timestamp+timeData.interTimeDivided;
-
-  // Serial.println(timeData.interTimestamp, sizeof(timeData.interTimestamp));
-
-  return timeData.interTimestamp;
+  return timeData.timestamp+timeData.interTimeDivided;
 }
 
 // subprocedure for capturing events from Geiger Kit
@@ -277,7 +266,7 @@ void loop() {
         if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
         // compare current timestamp to timestamps in array, each time getting new current time (more or less precise each compare)
         // if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-          // Serial.print(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i])); Serial.println(" REMOVING");
+          Serial.print(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i])); Serial.println(" REMOVING");
           geigerCounter.countsArray[i] = 0;
           }
         else {
