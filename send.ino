@@ -26,6 +26,8 @@
 #define CSN_PIN 26 // radio can use rx
 #define GEIGER_PIN 27
 
+// on esp32 if broadcast false then precision is to approximately 40 microseconds at around 35 cpm.
+// on esp32 if broadcast true then precision is to approximately 700 microseconds at around 35 cpm.
 volatile bool broadcast = true;
 
 RTC_DS1307 rtc;
