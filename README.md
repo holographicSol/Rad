@@ -20,9 +20,8 @@ be updated.
 
 Micro second precision.
 
-If Precision time is us500 (microseconds) as on my ESP32, then the main loop is able to register up to 1xCount from
-the geiger counter and remove N counts from countsArray in 500 microseconds. Precision time may increase/decrease
-according to current CPM because countsArray will take longer to process.
+Rad now uses two ESP32's on the transmitter, this is to speed up any measurements taken by moving the RF24 off the
+MCU that is measuing and move the RF24 onto its own ESP32 where it listens ready to transmit to the receiver.
 
 
 ![plot](./resources/RadZeroShieldTesting.jpg)
@@ -30,7 +29,7 @@ according to current CPM because countsArray will take longer to process.
 
 Requirements:
 
-2x KEYESTUDIO ESP32 WROOM Development Board
+3x KEYESTUDIO ESP32 WROOM Development Board
 
 2x NRF24L01+PA+LNA Wireless Transceivers.
 
