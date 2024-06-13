@@ -12,26 +12,25 @@
 #include <printf.h>
 #include <RF24.h>
 #include <OLEDDisplayUi.h>
-#include <RTClib.h>
 #include <stdlib.h>
 
-// memory limitations require counts log max. this value dramatically effects performance of main loop time.
-// larger buffer means higher max cpm reading, lower buffer means faster loop time but lower max cpm reading, at least on many MCU's this trade off is worth considering.
+// memory limitations require counts log max.
 // on esp32 a maxcount of 100 should mean main loop time will be half the time of main loop time with max count 10240.
-// it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in is reacting to a precise cpm reading within the shortest time you can.
-// if instead you are actually trying to get as precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase max count from 10240
-// providing you beleive there is the memory and performance available on the MCU your building for.
-#define max_count 100
-#define CE_PIN 25 // radio can use tx
-#define CSN_PIN 26 // radio can use rx
-#define GEIGER_PIN 27
+// it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in
+// is reacting to a precise cpm reading within the shortest time you can. if instead you are actually trying to get as
+// precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase
+// max count from 10240 providing you beleive there is the memory and performance available on the MCU your building for.
+#define max_count       100
 #define warning_level_0 99 // warn at this cpm 
+
+#define CE_PIN     25 // radio can use tx
+#define CSN_PIN    26 // radio can use rx
+#define GEIGER_PIN 27
 
 // on esp32 if broadcast false then precision is to approximately 40 microseconds at around 35 cpm with max_count 100.
 // on esp32 if broadcast true then precision is to approximately 700 microseconds at around 35 cpm with max_count 100.
 volatile bool broadcast = true;
 
-RTC_DS1307 rtc;
 RF24 radio(CE_PIN, CSN_PIN);
 SSD1306Wire display(0x3c, SDA, SCL);
 OLEDDisplayUi ui(&display);
@@ -56,35 +55,23 @@ PayloadStruct payload;
 // Geiger Counter
 struct GCStruct {
   double countsArray[max_count]; // stores each impulse as timestamps
-  double countsArrayTemp[max_count]; // temporarily stores timestamps from countsArray that have not yet expired
+  double countsArrayTemp[max_count]; // temporarily stores timestamps
   bool impulse = false; // sets true each interrupt on geiger counter pin
   bool warmup = true; // sets false after first 60 seconds have passed
   unsigned long counts; // stores counts and resets to zero every minute
   unsigned long precisionCounts = 0; // stores how many elements are in counts array
-  unsigned long CPM = 0; // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
+  unsigned long CPM = 0;
   char CPM_str[12];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60; // maximum logging period in seconds.
-  unsigned long CPM_BURST_GUAGE_LOG_PERIOD = 1000000; // Logging period in milliseconds, recommended value 15000-60000. (currently)
-  unsigned long CPM_BURST_GUAGE_MAX_PERIOD = 60000000; // Maximum logging period without modifying this sketch. default 60000.
-  unsigned long cpm_high;
-  unsigned long cpm_low;
-  unsigned long previousMillis; // variable for time measurement
-  unsigned long currentMillis;
-  unsigned int multiplier; // variable for calculation CPM
-  unsigned int cpm_arr_max = 3;
-  unsigned int cpm_arr_itter = 0;
-  int cpms[6]={0,0,0,0,0,0};
-  float cpm_average;
   unsigned long countsIter;
 };
 GCStruct geigerCounter;
 
 struct TimeStruct {
-  // double currentTime; // a placeholder for a current time (optionally used)
-  double previousTimestamp; // a placeholder for a previous time (optionally used)
-  unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
-  unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
+  double previousTimestamp; // a placeholder for a previous time
+  unsigned long mainLoopTimeTaken; // necessary to count time less than a second
+  unsigned long mainLoopTimeStart; // necessary for loop time taken
   double subTime;
   double subTimeDivided;
   double interTimeDivided;
@@ -155,17 +142,6 @@ void setup() {
   // serial
   Serial.begin(115200);
 
-  // rtc
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    Serial.flush();
-    while (1) delay(10);
-  }
-  if (! rtc.isrunning()) {
-    Serial.println("RTC is NOT running, let's set the time!");
-  }
-  rtc.adjust(DateTime(1970, 1, 1, 0, 0, 0)); // Y M D H MS. uncomment this thine during compile time only if the clock is not already set
-
   // display
   display.init();
   display.flipScreenVertically();
@@ -209,10 +185,10 @@ void setup() {
 
 
 void loop() {
-  // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
+  // measure this loop time so we know how quickly items are added/removed from arrays
   timeData.mainLoopTimeStart = micros();
 
-  // set current timestamp to be used this loop same millisecond+- depending on loop speed.
+  // set current timestamp to be used
   timeData.timestamp = currentTime();
 
   // Serial.print("currentTime: "); Serial.println(timeData.currentTime, 12);
@@ -222,7 +198,7 @@ void loop() {
     geigerCounter.impulse = false;
 
     if (broadcast == true) {
-      // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen, as you would expect from a 'local' geiger counter.
+      // transmit counts seperately from CPM, so that the receiver(s) can react to counts as they occur
       memset(payload.message, 0, 12);
       memcpy(payload.message, "X", 1);
       payload.payloadID = 1000;
@@ -249,7 +225,7 @@ void loop() {
         }
       else {
         geigerCounter.precisionCounts++; // non expired counters increment the precision counter
-        geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // non expired counters go into the new temporary array
+        geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // store non expired
       }
     }
   }
