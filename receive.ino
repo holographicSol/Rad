@@ -34,13 +34,13 @@ PayloadStruct payload;
 
 // Geiger Counter
 struct GCStruct {
-  int countsArray[10240]; // stores each impulse as micros
-  int countsArrayTemp[10240]; // temporarily stores micros from countsArray that have not yet expired
+  double countsArray[max_count]; // stores each impulse as timestamps
+  double countsArrayTemp[max_count]; // temporarily stores timestamps
   bool impulse = false; // sets true each interrupt on geiger counter pin
   bool warmup = true; // sets false after first 60 seconds have passed
   unsigned long counts = 0; // stores counts and resets to zero every minute
   unsigned long precisionCounts = 0; // stores how many elements are in counts array
-  unsigned long CPM = 0; // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
+  unsigned long CPM = 0;
   char CPM_str[12];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60000000; //Maximum logging period in microseconds
@@ -134,7 +134,7 @@ void loop() {
       memset(geigerCounter.CPM_str, 0, 12);
       memcpy(geigerCounter.CPM_str, payload.message, 12);
       geigerCounter.CPM = atoi(geigerCounter.CPM_str);
-      geigerCounter.uSvh = geigerCounter.CPM * 0.003321969697;
+      geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
     }
   }
 }
