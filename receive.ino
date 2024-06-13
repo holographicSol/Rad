@@ -105,6 +105,9 @@ void setup() {
   radio.openReadingPipe(1, address[1]); // using pipe 1
   radio.stopListening();
   radio.startListening(); // put radio in RX mode
+  radio.setChannel(124); // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz. ch21 = 2.421 GHz
+  radio.setDataRate(RF24_2MBPS); // RF24_250KBPS RF24_1MBPS RF24_2MBPS 
+  radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
   
 } 
 
