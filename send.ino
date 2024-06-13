@@ -184,6 +184,7 @@ void setup() {
   radio.setDataRate(RF24_2MBPS); // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
   radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
   // radio.setRetries(300, 1); // uncomment this line to reduce retry time and retry attempts
+  
   attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
 
