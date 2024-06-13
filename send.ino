@@ -179,6 +179,10 @@ void setup() {
   radio.openWritingPipe(address[1]); // always uses pipe 0
   radio.openReadingPipe(1, address[0]); // using pipe 1
   radio.stopListening();
+  radio.setChannel(124); // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz. ch21 = 2.421 GHz
+  radio.setDataRate(RF24_2MBPS); // RF24_250KBPS RF24_1MBPS RF24_2MBPS 
+  radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
+  // radio.setRetries(300, 1); // uncomment this line to reduce retry time and retry attempts
 
   attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
@@ -191,6 +195,8 @@ void loop() {
   // set current timestamp to be used
   timeData.timestamp = currentTime();
 
+  // radio.flush_tx();
+
   // Serial.print("currentTime: "); Serial.println(timeData.currentTime, 12);
 
   // check if impulse
@@ -199,10 +205,11 @@ void loop() {
 
     if (broadcast == true) {
       // transmit counts seperately from CPM, so that the receiver(s) can react to counts as they occur
-      memset(payload.message, 0, 12);
+      memset(payload.message, 0, 10);
       memcpy(payload.message, "X", 1);
       payload.payloadID = 1000;
-      radio.write(&payload, sizeof(payload));
+      // radio.write(&payload, sizeof(payload));
+      radio.writeFast(&payload, sizeof(payload));
     }
   }
 
@@ -212,6 +219,7 @@ void loop() {
     timeData.previousTimestamp = timeData.timestamp;
     geigerCounter.warmup = false; // completed 60 second warmup required for precision
   }
+
   // step through the array and remove expired impulses by exluding them from our new array.
   geigerCounter.precisionCounts = 0;
   memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
@@ -241,12 +249,13 @@ void loop() {
 
   // transmit the results
   if (broadcast == true) {
-    memset(payload.message, 0, 12);
-    memset(geigerCounter.CPM_str, 0, 12);
+    memset(payload.message, 0, 10);
+    memset(geigerCounter.CPM_str, 0, 10);
     dtostrf(geigerCounter.CPM, 0, 4, geigerCounter.CPM_str);
     memcpy(payload.message, geigerCounter.CPM_str, sizeof(geigerCounter.CPM_str));
     payload.payloadID = 1111;
-    radio.write(&payload, sizeof(payload));
+    // radio.write(&payload, sizeof(payload));
+    radio.writeFast(&payload, sizeof(payload));
   }
 
   // store time taken to complete
