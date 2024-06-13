@@ -44,5 +44,11 @@ Requirements:
 
 ![plot](./resources/together.jpg)
 
+![plot](./resources/transmitter_00.jpg)
+
+![plot](./resources/transmitter_02.jpg)
+
+![plot](./resources/transmitter_01.jpg)
+
 
 Note: Currently zero security on the tranceivers.
