@@ -44,11 +44,21 @@ Requirements:
 
 ![plot](./resources/together.jpg)
 
+
+Transmitter/Measuring Device: (reference)  
+
 ![plot](./resources/transmitter_00.JPG)
 
 ![plot](./resources/transmitter_02.JPG)
 
 ![plot](./resources/transmitter_01.JPG)
+
+
+Remote Receiver Device: (reference)  
+
+![plot](./resources/receiver_0.JPG)
+
+![plot](./resources/receiver_1.JPG)
 
 
 Note: Currently zero security on the tranceivers.
