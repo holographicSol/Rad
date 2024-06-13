@@ -173,9 +173,6 @@ void setup() {
   radio.flush_tx();
   radio.setPALevel(RF24_PA_LOW); // RF24_PA_MAX is default.
   radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
-  Serial.println("Channel:  " + String(radio.getChannel()));
-  Serial.println("Data Rate:" + String(radio.getDataRate()));
-  Serial.println("PA Level: " + String(radio.getPALevel()));
   radio.openWritingPipe(address[1]); // always uses pipe 0
   radio.openReadingPipe(1, address[0]); // using pipe 1
   radio.stopListening();
@@ -183,8 +180,11 @@ void setup() {
   radio.setChannel(124); // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz. ch21 = 2.421 GHz
   radio.setDataRate(RF24_2MBPS); // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
   radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
-  // radio.setRetries(300, 1); // uncomment this line to reduce retry time and retry attempts
-  
+  // radio.setRetries(300, 1); // uncomment this line to reduce retry time and retry attempts.
+  Serial.println("Channel:  " + String(radio.getChannel()));
+  Serial.println("Data Rate:" + String(radio.getDataRate()));
+  Serial.println("PA Level: " + String(radio.getPALevel()));
+
   attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
 
