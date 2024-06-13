@@ -25,6 +25,8 @@ MCU that is measuing and move the RF24 onto its own ESP32 where it listens ready
 makes the system extremely fast even while transmitting and a very powerful setup which can be easily reimplemented
 for different projects for different reasons.
 
+Current precision is typically less than us50 (< 50 microseconds).
+
 
 ![plot](./resources/ZeroShieldTesting.jpg)
 
