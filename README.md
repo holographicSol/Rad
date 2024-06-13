@@ -21,7 +21,8 @@ be updated.
 Micro second precision.
 
 Rad now uses two ESP32's on the transmitter, this is to speed up any measurements taken by moving the RF24 off the
-MCU that is measuing and move the RF24 onto its own ESP32 where it listens ready to transmit to the receiver.
+MCU that is measuing and move the RF24 onto its own ESP32 where it listens ready to transmit to the receiver. This
+makes the system extremely fast even while transmitting. 
 
 
 ![plot](./resources/RadZeroShieldTesting.jpg)
