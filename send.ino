@@ -181,10 +181,9 @@ void setup() {
   radio.stopListening();
   // configure the trancievers identically and be sure to stay legal. legal max typically 2.421 GHz in public places 
   radio.setChannel(124); // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz. ch21 = 2.421 GHz
-  radio.setDataRate(RF24_2MBPS); // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS 
+  radio.setDataRate(RF24_2MBPS); // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
   radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
-  radio.setRetries(250, 1); // uncomment this line to reduce retry time and retry attempts
-
+  // radio.setRetries(300, 1); // uncomment this line to reduce retry time and retry attempts
   attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
 
