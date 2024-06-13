@@ -42,7 +42,7 @@ Requirements:
 2x SSD1306 128x64 OLED modules.
 
 
-![plot](./resources/together.JPG)
+![plot](./resources/together.jpg)
 
 
 Note: Currently zero security on the tranceivers.
