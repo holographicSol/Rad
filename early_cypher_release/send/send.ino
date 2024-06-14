@@ -100,7 +100,7 @@ struct PayloadStruct {
 };
 PayloadStruct payload;
 
-#define maxCPM_StrSize maxPayloadSize
+#define maxCPM_StrSize 10
 // Geiger Counter
 struct GCStruct {
   double countsArray[max_count]; // stores each impulse as timestamps
@@ -332,13 +332,14 @@ void loop() {
   if (broadcast == true) {
     if (geigerCounter.CPM != geigerCounter.previousCPM) {
       geigerCounter.previousCPM = geigerCounter.CPM;
+      memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
       
       Serial.println("---------------------------------------------------------------------------");
       char xyz[18];
       memcpy(xyz, "CPM", 3);
       strcat(xyz, geigerCounter.CPM_str);
-      memcpy(readBuffer, xyz, 18);
+      memcpy(readBuffer, xyz, sizeof(geigerCounter.CPM_str));
       // ----------------------------------------------------------------------------------------------------------------------
       Serial.print("readBuffer length: "); Serial.println(sizeof(readBuffer));
       // must not exceed INPUT_BUFFER_LIMIT bytes; may contain a newline
