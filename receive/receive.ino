@@ -6,10 +6,8 @@
 #include "RF24.h"
 #include "OLEDDisplayUi.h"
 
-#define max_count 100
 #define CE_PIN 25 // radio can use tx
 #define CSN_PIN 26 // radio can use rx
-#define warning_level_0 99 // warn at this cpm 
 
 SSD1306Wire display(0x3c, SDA, SCL);
 OLEDDisplayUi ui ( &display );
@@ -28,19 +26,19 @@ uint64_t address[6] = { 0x7878787878LL,
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
-  char message[12];
+  char message[10];
 };
 PayloadStruct payload;
 
 // Geiger Counter
 struct GCStruct {
-  double countsArray[max_count]; // stores each impulse as timestamps
-  double countsArrayTemp[max_count]; // temporarily stores timestamps
+  int countsArray[10240]; // stores each impulse as micros
+  int countsArrayTemp[10240]; // temporarily stores micros from countsArray that have not yet expired
   bool impulse = false; // sets true each interrupt on geiger counter pin
   bool warmup = true; // sets false after first 60 seconds have passed
   unsigned long counts = 0; // stores counts and resets to zero every minute
   unsigned long precisionCounts = 0; // stores how many elements are in counts array
-  unsigned long CPM = 0;
+  unsigned long CPM = 0; // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
   char CPM_str[12];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60000000; //Maximum logging period in microseconds
@@ -54,7 +52,8 @@ GCStruct geigerCounter;
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  if (geigerCounter.CPM >= warning_level_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+
+  if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
   display->drawString(display->getWidth()/2, 25, "cpm");
   display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
   display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
@@ -96,19 +95,17 @@ void setup() {
   }
   radio.flush_rx();
   radio.flush_tx();
+  radio.setPALevel(RF24_PA_LOW); // RF24_PA_MAX is default.
   radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
-  radio.openWritingPipe(address[0]); // always uses pipe 0
-  radio.openReadingPipe(1, address[1]); // using pipe 1
-  // configure the trancievers identically and be sure to stay legal. legal max typically 2.421 GHz in public places 
-  radio.setChannel(21); // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz. ch21 = 2.421 GHz
-  radio.setDataRate(RF24_250KBPS); // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS 
-  radio.setPALevel(RF24_PA_MIN); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
   Serial.println("Channel:  " + String(radio.getChannel()));
   Serial.println("Data Rate:" + String(radio.getDataRate()));
   Serial.println("PA Level: " + String(radio.getPALevel()));
+  radio.openWritingPipe(address[0]); // always uses pipe 0
+  radio.openReadingPipe(1, address[1]); // using pipe 1
   radio.stopListening();
   radio.startListening(); // put radio in RX mode
-}
+  
+} 
 
 void loop() {
 
@@ -120,7 +117,7 @@ void loop() {
   if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
     uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
     radio.read(&payload, bytes); // fetch payload from FIFO
-    Serial.println(String("[ID ") + String(payload.payloadID) + "] " + payload.message);
+    // Serial.println(String("[ID ") + String(payload.payloadID) + "] " + payload.message);
 
     // counts
     if (payload.payloadID == 1000){
@@ -136,7 +133,7 @@ void loop() {
       memset(geigerCounter.CPM_str, 0, 12);
       memcpy(geigerCounter.CPM_str, payload.message, 12);
       geigerCounter.CPM = atoi(geigerCounter.CPM_str);
-      geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
+      geigerCounter.uSvh = geigerCounter.CPM * 0.003321969697;
     }
   }
 }
