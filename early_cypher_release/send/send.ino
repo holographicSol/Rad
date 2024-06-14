@@ -18,10 +18,9 @@
 #include "AESLib.h"
 #define BAUD 9600
 AESLib aesLib;
-#define INPUT_BUFFER_LIMIT (128 + 1) // designed for Arduino UNO, not stress-tested anymore (this works with readBuffer[129])
+#define INPUT_BUFFER_LIMIT (128 + 1) // designed for Arduino UNO, not stress-tested anymore (this works with message[129])
 unsigned char cleartext[INPUT_BUFFER_LIMIT] = {0}; // THIS IS INPUT BUFFER (FOR TEXT)
 unsigned char ciphertext[2*INPUT_BUFFER_LIMIT] = {0}; // THIS IS OUTPUT BUFFER (FOR BASE64-ENCODED ENCRYPTED DATA)
-unsigned char readBuffer[18] = "username:pass";
 char message[56];
 char credentials[18];
 // AES Encryption Key (same as in node-js example)
@@ -242,13 +241,13 @@ void setup() {
   attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
 
-void ciphertSend() {
+void cipherSend() {
   // ----------------------------------------------------------------------------------------------------------------------
   // Serial.println("---------------------------------------------------------------------------");
-  // Serial.print("readBuffer length: "); Serial.println(sizeof(readBuffer));
-  sprintf((char*)cleartext, "%s", readBuffer); // must not exceed INPUT_BUFFER_LIMIT bytes; may contain a newline
+  // Serial.print("message length: "); Serial.println(sizeof(message));
+  sprintf((char*)cleartext, "%s", message); // must not exceed INPUT_BUFFER_LIMIT bytes; may contain a newline
   // iv_block gets written to, provide own fresh copy... so each iteration of encryption will be the same.
-  uint16_t msgLen = sizeof(readBuffer);
+  uint16_t msgLen = sizeof(message);
   memcpy(enc_iv, enc_iv_to, sizeof(enc_iv_to));
   uint16_t encLen = encrypt_to_ciphertext((char*)cleartext, msgLen, enc_iv);
   // Serial.print("Encrypted length = "); Serial.println(encLen );
@@ -294,10 +293,9 @@ void loop() {
     if (broadcast == true) {
       // create the message to be broadcast
       memset(message, 0, 56);
-      memset(readBuffer, 0, 18);
       strcat(message, credentials);
       strcat(message, "IMP");
-      memcpy(readBuffer, message, 18);
+
       cipherSend();
     }
   }
@@ -349,11 +347,9 @@ void loop() {
       memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
       memset(message, 0, 56);
-      memset(readBuffer, 0, 18);
       strcat(message, credentials);
       strcat(message, "CPM");
       strcat(message, geigerCounter.CPM_str);
-      memcpy(readBuffer, message, 18);
 
       cipherSend();
     }
