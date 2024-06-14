@@ -168,29 +168,30 @@ void loop() {
     memset(payload.message, 0, sizeof(payload.message));
     memset(cleartext, 0, sizeof(cleartext));
 
-    Serial.println("---------------------------------------------------------------------------");
+    // read the payload into payload struct
     uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
     radio.read(&payload, bytes); // fetch payload from FIFO
+    Serial.println("---------------------------------------------------------------------------");
     Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);       
 
-    // ----------------------------------------------------------------------------------------------------------------------
+    // assume decrypt. force all incoming traffic through this before parsing the message for commands
     unsigned char base64decoded[50] = {0};
     base64_decode((char*)base64decoded, (char*)payload.message, 32);
     memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
     uint16_t decLen = decrypt_to_cleartext(payload.message, strlen((char*)payload.message), enc_iv);
     Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
     Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
-    // ----------------------------------------------------------------------------------------------------------------------
 
-    // example
+    // does decyphered text have correct creds?
     if (strncmp( (char*)cleartext, creds, strlen(creds)-1 ) == 0) {
       Serial.println("-- access granted. credetials authenticated.");
 
+      // if so then seperate creds from the rest of the payload message and parse for commands
       memset(xyz, 0, 56);
       strncpy(xyz, (char*)cleartext + strlen(creds), strlen((char*)cleartext) - strlen(creds));
       Serial.print("-- message: "); Serial.println(xyz);
 
-      // impulse message
+      // impulse
       if (strcmp( xyz, "IMP") == 0) {
         digitalWrite(speaker_0, HIGH);
         digitalWrite(speaker_0, HIGH);
@@ -200,7 +201,7 @@ void loop() {
         digitalWrite(speaker_0, LOW);
       }
 
-      // cpm message
+      // cpm
       else if (strncmp( xyz, "CPM", 3) == 0) {
         char var[32];
         strncpy(var, xyz + 3, strlen(xyz) - 3);
