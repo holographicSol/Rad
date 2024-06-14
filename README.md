@@ -21,7 +21,7 @@ Requires system remains on. If the system looses power then you have at least si
 be updated.
 
 
-![plot](./resources/ZeroShieldTesting.jpg)
+![plot](./resources/ZeroShieldTesting(old).jpg)
 
 
 Requirements:
