@@ -23,7 +23,7 @@ unsigned char cleartext[INPUT_BUFFER_LIMIT] = {0}; // THIS IS INPUT BUFFER (FOR 
 unsigned char ciphertext[2*INPUT_BUFFER_LIMIT] = {0}; // THIS IS OUTPUT BUFFER (FOR BASE64-ENCODED ENCRYPTED DATA)
 unsigned char readBuffer[18] = "username:pass";
 char message[56];
-char credentials[18] = "uname:pass:";
+char credentials[18];
 // AES Encryption Key (same as in node-js example)
 byte aes_key[] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C };
 // General initialization vector (same as in node-js example) (you must use your own IV's in production for full security!!!)
@@ -215,6 +215,9 @@ void setup() {
   Serial.print("APB Bus Frequency: ");
   Serial.print(getApbFrequency());
   Serial.println(" Hz");
+
+  // default credentials
+  strcpy(credentials, "uname:pass:");
 
   // radio
   if (!radio.begin()) {
