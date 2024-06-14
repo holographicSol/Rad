@@ -14,9 +14,8 @@ AESLib aesLib;
 unsigned char cleartext[INPUT_BUFFER_LIMIT] = {0}; // THIS IS INPUT BUFFER (FOR TEXT)
 unsigned char ciphertext[2*INPUT_BUFFER_LIMIT] = {0}; // THIS IS OUTPUT BUFFER (FOR BASE64-ENCODED ENCRYPTED DATA)
 // unsigned char readBuffer[18] = "uname:pass:";
-char creds[18];
-
-char xyz[56];
+char credentials[18];
+char message[56];
 // AES Encryption Key (same as in node-js example)
 byte aes_key[] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C };
 // General initialization vector (same as in node-js example) (you must use your own IV's in production for full security!!!)
@@ -132,8 +131,8 @@ void setup() {
   digitalWrite(speaker_0, LOW);
   digitalWrite(led_red, LOW);
 
-  // default creds
-  strcpy(creds, "uname:pass:");
+  // default credentials
+  strcpy(credentials, "uname:pass:");
 
   // radio
   if (!radio.begin()) {
@@ -182,17 +181,17 @@ void loop() {
     Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
     Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
 
-    // does decyphered text have correct creds?
-    if (strncmp( (char*)cleartext, creds, strlen(creds)-1 ) == 0) {
+    // does decyphered text have correct credentials?
+    if (strncmp( (char*)cleartext, credentials, strlen(credentials)-1 ) == 0) {
       Serial.println("-- access granted. credetials authenticated.");
 
-      // if so then seperate creds from the rest of the payload message and parse for commands
-      memset(xyz, 0, 56);
-      strncpy(xyz, (char*)cleartext + strlen(creds), strlen((char*)cleartext) - strlen(creds));
-      Serial.print("-- message: "); Serial.println(xyz);
+      // if so then seperate credentials from the rest of the payload message and parse for commands
+      memset(message, 0, 56);
+      strncpy(message, (char*)cleartext + strlen(credentials), strlen((char*)cleartext) - strlen(credentials));
+      Serial.print("-- message: "); Serial.println(message);
 
       // impulse
-      if (strcmp( xyz, "IMP") == 0) {
+      if (strcmp( message, "IMP") == 0) {
         digitalWrite(speaker_0, HIGH);
         digitalWrite(speaker_0, HIGH);
         digitalWrite(led_red, HIGH); // turn the LED on (HIGH is the voltage level)
@@ -202,9 +201,9 @@ void loop() {
       }
 
       // cpm
-      else if (strncmp( xyz, "CPM", 3) == 0) {
+      else if (strncmp( message, "CPM", 3) == 0) {
         char var[32];
-        strncpy(var, xyz + 3, strlen(xyz) - 3);
+        strncpy(var, message + 3, strlen(message) - 3);
         memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
         memcpy(geigerCounter.CPM_str, var, maxCPM_StrSize);
         geigerCounter.CPM = atoi(geigerCounter.CPM_str);

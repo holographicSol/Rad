@@ -22,8 +22,8 @@ AESLib aesLib;
 unsigned char cleartext[INPUT_BUFFER_LIMIT] = {0}; // THIS IS INPUT BUFFER (FOR TEXT)
 unsigned char ciphertext[2*INPUT_BUFFER_LIMIT] = {0}; // THIS IS OUTPUT BUFFER (FOR BASE64-ENCODED ENCRYPTED DATA)
 unsigned char readBuffer[18] = "username:pass";
-char xyz[56];
-char creds[18] = "uname:pass:";
+char message[56];
+char credentials[18] = "uname:pass:";
 // AES Encryption Key (same as in node-js example)
 byte aes_key[] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C };
 // General initialization vector (same as in node-js example) (you must use your own IV's in production for full security!!!)
@@ -255,11 +255,11 @@ void loop() {
 
     if (broadcast == true) {
       Serial.println("---------------------------------------------------------------------------");
-      memset(xyz, 0, 56);
+      memset(message, 0, 56);
       memset(readBuffer, 0, 18);
-      strcat(xyz, creds);
-      strcat(xyz, "IMP");
-      memcpy(readBuffer, xyz, 18);
+      strcat(message, credentials);
+      strcat(message, "IMP");
+      memcpy(readBuffer, message, 18);
       // ----------------------------------------------------------------------------------------------------------------------
       Serial.print("readBuffer length: "); Serial.println(sizeof(readBuffer));
       sprintf((char*)cleartext, "%s", readBuffer); // must not exceed INPUT_BUFFER_LIMIT bytes; may contain a newline
@@ -340,12 +340,12 @@ void loop() {
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
       
       Serial.println("---------------------------------------------------------------------------");
-      memset(xyz, 0, 56);
+      memset(message, 0, 56);
       memset(readBuffer, 0, 18);
-      strcat(xyz, creds);
-      strcat(xyz, "CPM");
-      strcat(xyz, geigerCounter.CPM_str);
-      memcpy(readBuffer, xyz, 18);
+      strcat(message, credentials);
+      strcat(message, "CPM");
+      strcat(message, geigerCounter.CPM_str);
+      memcpy(readBuffer, message, 18);
       // ----------------------------------------------------------------------------------------------------------------------
       Serial.print("readBuffer length: "); Serial.println(sizeof(readBuffer));
       sprintf((char*)cleartext, "%s", readBuffer); // must not exceed INPUT_BUFFER_LIMIT bytes; may contain a newline
