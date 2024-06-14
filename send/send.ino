@@ -14,21 +14,22 @@
 #include <OLEDDisplayUi.h>
 #include <stdlib.h>
 
-// memory limitations require counts log max. default for esp32: 10240. this value dramatically effects performance of main loop time.
-// larger buffer means higher max cpm reading, lower buffer means faster loop time but lower max cpm reading, at least on many MCU's this
-// trade off is worth considering.
+// memory limitations require counts log max.
 // on esp32 a maxcount of 100 should mean main loop time will be half the time of main loop time with max count 10240.
-// it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in is reacting to a
-// precise cpm reading within the shortest time you can.
-// if instead you are actually trying to get as precise (arduino is not medical/military grade) a reading as you can at any level of
-// activity then you may increase max count from 10240
-// providing you beleive there is the memory and performance available on the MCU your building for.
-#define max_count 100
-#define CE_PIN 25 // radio can use tx
-#define CSN_PIN 26 // radio can use rx
+// it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in
+// is reacting to a precise cpm reading within the shortest time you can. if instead you are actually trying to get as
+// precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase
+// max count from 10240 providing you beleive there is the memory and performance available on the MCU your building for.
+#define max_count       100
+#define warning_level_0 99 // warn at this cpm 
+
+#define CE_PIN     25 // radio can use tx
+#define CSN_PIN    26 // radio can use rx
 #define GEIGER_PIN 27
 
-volatile bool state = LOW;
+// on esp32 if broadcast false then precision is to approximately 40 microseconds at around 35 cpm with max_count 100.
+// on esp32 if broadcast true then precision is to approximately 700 microseconds at around 35 cpm with max_count 100.
+volatile bool broadcast = true;
 
 RF24 radio(CE_PIN, CSN_PIN);
 SSD1306Wire display(0x3c, SDA, SCL);
@@ -54,12 +55,13 @@ PayloadStruct payload;
 // Geiger Counter
 struct GCStruct {
   double countsArray[max_count]; // stores each impulse as timestamps
-  double countsArrayTemp[max_count]; // temporarily stores timestamps from countsArray that have not yet expired
+  double countsArrayTemp[max_count]; // temporarily stores timestamps
   bool impulse = false; // sets true each interrupt on geiger counter pin
   bool warmup = true; // sets false after first 60 seconds have passed
   unsigned long counts; // stores counts and resets to zero every minute
   unsigned long precisionCounts = 0; // stores how many elements are in counts array
-  unsigned long CPM = 0; // stores cpm value according to precisionCounts (should always be equal to precisionCounts because we are not estimating)
+  unsigned long CPM = 0;
+  unsigned long previousCPM = 0;
   char CPM_str[12];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60; // maximum logging period in seconds.
@@ -68,7 +70,6 @@ struct GCStruct {
 GCStruct geigerCounter;
 
 struct TimeStruct {
-  // double currentTime; // a placeholder for a current time (optionally used)
   double previousTimestamp; // a placeholder for a previous time (optionally used)
   unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
   unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
@@ -109,8 +110,12 @@ void tubeImpulseISR() {
   geigerCounter.impulse = true;
   if (geigerCounter.countsIter < max_count) {geigerCounter.countsIter++;}
   else {geigerCounter.countsIter=0;}
-  // add the impulse as a timestamp to array with index somewhere in range of max_count
-  geigerCounter.countsArray[geigerCounter.countsIter] = interCurrentTime();
+
+  // add current timestamp (per loop) to timestamps in array
+  geigerCounter.countsArray[geigerCounter.countsIter] = timeData.timestamp;
+
+  // compare current (unique) timestamp to timestamps in array
+  // geigerCounter.countsArray[geigerCounter.countsIter] = interCurrentTime();
 }
 
 void BGTubeImpulseISR() {
@@ -121,7 +126,6 @@ void BGTubeImpulseISR() {
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-
   if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
   else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
   display->drawString(display->getWidth()/2, 25, "cpm");
@@ -168,14 +172,18 @@ void setup() {
   }
   radio.flush_rx();
   radio.flush_tx();
-  radio.setPALevel(RF24_PA_LOW); // RF24_PA_MAX is default.
   radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
+  radio.openWritingPipe(address[0]); // always uses pipe 0
+  radio.openReadingPipe(1, address[0]); // using pipe 1
+  radio.stopListening();
+  // configure the trancievers identically and be sure to stay legal. legal max typically 2.421 GHz in public places 
+  radio.setChannel(124); // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz. ch21 = 2.421 GHz
+  radio.setDataRate(RF24_2MBPS); // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
+  radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
+  // radio.setRetries(250, 3); // uncomment this line to reduce retry time and retry attempts.
   Serial.println("Channel:  " + String(radio.getChannel()));
   Serial.println("Data Rate:" + String(radio.getDataRate()));
   Serial.println("PA Level: " + String(radio.getPALevel()));
-  radio.openWritingPipe(address[1]); // always uses pipe 0
-  radio.openReadingPipe(1, address[0]); // using pipe 1
-  radio.stopListening();
 
   attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
@@ -194,11 +202,13 @@ void loop() {
   if (geigerCounter.impulse == true) {
     geigerCounter.impulse = false;
 
+    if (broadcast == true) {
     // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
-    memset(payload.message, 0, 12);
-    memcpy(payload.message, "X", 1);
-    payload.payloadID = 1000;
-    radio.write(&payload, sizeof(payload));
+      memset(payload.message, 0, 12);
+      memcpy(payload.message, "X", 1);
+      payload.payloadID = 1000;
+      radio.write(&payload, sizeof(payload));
+    }
   }
   
 
@@ -215,18 +225,17 @@ void loop() {
   memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
   for (int i = 0; i < max_count; i++) {
     if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
-
-      // compare current timestamp to timestamps in array, each time using timestamp set in the beginning of this loop (faster)
+    
+      // compare current timestamp (per loop) to timestamps in array
       if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-      // compare current timestamp to timestamps in array, each time getting new current time (more or less precise each compare)
+      // compare current (unique) timestamp to timestamps in array
       // if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-        // Serial.print(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i])); Serial.println(" REMOVING");
         geigerCounter.countsArray[i] = 0;
+        
         }
       else {
-        // Serial.println(geigerCounter.countsArray[i], sizeof(geigerCounter.countsArray[i]));
         geigerCounter.precisionCounts++; // non expired counters increment the precision counter
-        geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // non expired counters go into the new temporary array
+        geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // store non expired
       }
     }
   }
@@ -240,17 +249,18 @@ void loop() {
   // refresh ssd1306 128x64 display
   ui.update();
 
-  // transmit the results
-  memset(payload.message, 0, 12);
-  memset(geigerCounter.CPM_str, 0, 12);
-  dtostrf(geigerCounter.CPM, 0, 4, geigerCounter.CPM_str);
-  memcpy(payload.message, geigerCounter.CPM_str, sizeof(geigerCounter.CPM_str));
-  payload.payloadID = 1111;
-  radio.write(&payload, sizeof(payload));
+  if (broadcast == true) {
+    // transmit the results
+    memset(payload.message, 0, 12);
+    memset(geigerCounter.CPM_str, 0, 12);
+    dtostrf(geigerCounter.CPM, 0, 4, geigerCounter.CPM_str);
+    memcpy(payload.message, geigerCounter.CPM_str, sizeof(geigerCounter.CPM_str));
+    payload.payloadID = 1111;
+    radio.write(&payload, sizeof(payload));
+  }
 
   // store time taken to complete
   timeData.mainLoopTimeTaken = micros() - timeData.mainLoopTimeStart;
   // Serial.println("timeData.mainLoopTimeTaken:" + String(timeData.mainLoopTimeTaken));
-  // delay(50);
 }
 
