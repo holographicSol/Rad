@@ -35,16 +35,16 @@ void aes_init() {
   aesLib.set_paddingmode((paddingMode)0);
 }
 uint16_t encrypt_to_ciphertext(char * msg, uint16_t msgLen, byte iv[]) {
-  Serial.println("Calling encrypt (string)...");
+  // Serial.println("Calling encrypt (string)...");
   // aesLib.get_cipher64_length(msgLen);
   int cipherlength = aesLib.encrypt((byte*)msg, msgLen, (byte*)ciphertext, aes_key, sizeof(aes_key), iv);
                    // uint16_t encrypt(byte input[], uint16_t input_length, char * output, byte key[],int bits, byte my_iv[]);
   return cipherlength;
 }
 uint16_t decrypt_to_cleartext(byte msg[], uint16_t msgLen, byte iv[]) {
-  Serial.print("Calling decrypt...; ");
+  // Serial.print("Calling decrypt...; ");
   uint16_t dec_bytes = aesLib.decrypt(msg, msgLen, (byte*)cleartext, aes_key, sizeof(aes_key), iv);
-  Serial.print("Decrypted bytes: "); Serial.println(dec_bytes);
+  // Serial.print("Decrypted bytes: "); Serial.println(dec_bytes);
   return dec_bytes;
 }
 /* non-blocking wait function */
@@ -242,6 +242,42 @@ void setup() {
   attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
 
+void ciphertSend() {
+  // ----------------------------------------------------------------------------------------------------------------------
+  // Serial.println("---------------------------------------------------------------------------");
+  // Serial.print("readBuffer length: "); Serial.println(sizeof(readBuffer));
+  sprintf((char*)cleartext, "%s", readBuffer); // must not exceed INPUT_BUFFER_LIMIT bytes; may contain a newline
+  // iv_block gets written to, provide own fresh copy... so each iteration of encryption will be the same.
+  uint16_t msgLen = sizeof(readBuffer);
+  memcpy(enc_iv, enc_iv_to, sizeof(enc_iv_to));
+  uint16_t encLen = encrypt_to_ciphertext((char*)cleartext, msgLen, enc_iv);
+  // Serial.print("Encrypted length = "); Serial.println(encLen );
+  // ----------------------------------------------------------------------------------------------------------------------
+  // unsigned char base64decoded[50] = {0};
+  // // base64_decode((char*)base64decoded, (char*)ciphertext, encLen);
+  // base64_decode((char*)base64decoded, (char*)ciphertext, 32);
+  // memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
+  // uint16_t decLen = decrypt_to_cleartext(base64decoded, strlen((char*)base64decoded), enc_iv);
+  // Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
+  // Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
+  // ----------------------------------------------------------------------------------------------------------------------
+  memset(payload.message, 0, maxPayloadSize);
+  memcpy(payload.message, ciphertext, sizeof(ciphertext));
+  payload.payloadID = 1000;
+  // Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);
+  // ----------------------------------------------------------------------------------------------------------------------
+  // unsigned char base64decoded2[50] = {0};
+  // // base64_decode((char*)base64decoded2, (char*)ciphertext, encLen);
+  // base64_decode((char*)base64decoded2, (char*)payload.message, 32);
+  // memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
+  // uint16_t decLen2 = decrypt_to_cleartext(base64decoded2, strlen((char*)base64decoded2), enc_iv);
+  // Serial.print("Decrypted payload.message of length: "); Serial.println(decLen2);
+  // Serial.print("Decrypted payload.message: "); Serial.println((char*)cleartext);
+  // ----------------------------------------------------------------------------------------------------------------------
+  // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
+  radio.write(&payload, sizeof(payload));
+}
+
 
 void loop() {
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
@@ -255,46 +291,14 @@ void loop() {
   // check if impulse
   if (geigerCounter.impulse == true) {
     geigerCounter.impulse = false;
-
     if (broadcast == true) {
-      Serial.println("---------------------------------------------------------------------------");
+      // create the message to be broadcast
       memset(message, 0, 56);
       memset(readBuffer, 0, 18);
       strcat(message, credentials);
       strcat(message, "IMP");
       memcpy(readBuffer, message, 18);
-      // ----------------------------------------------------------------------------------------------------------------------
-      Serial.print("readBuffer length: "); Serial.println(sizeof(readBuffer));
-      sprintf((char*)cleartext, "%s", readBuffer); // must not exceed INPUT_BUFFER_LIMIT bytes; may contain a newline
-      // iv_block gets written to, provide own fresh copy... so each iteration of encryption will be the same.
-      uint16_t msgLen = sizeof(readBuffer);
-      memcpy(enc_iv, enc_iv_to, sizeof(enc_iv_to));
-      uint16_t encLen = encrypt_to_ciphertext((char*)cleartext, msgLen, enc_iv);
-      Serial.print("Encrypted length = "); Serial.println(encLen );
-      // ----------------------------------------------------------------------------------------------------------------------
-      // unsigned char base64decoded[50] = {0};
-      // // base64_decode((char*)base64decoded, (char*)ciphertext, encLen);
-      // base64_decode((char*)base64decoded, (char*)ciphertext, 32);
-      // memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
-      // uint16_t decLen = decrypt_to_cleartext(base64decoded, strlen((char*)base64decoded), enc_iv);
-      // Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
-      // Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
-      // ----------------------------------------------------------------------------------------------------------------------
-      memset(payload.message, 0, maxPayloadSize);
-      memcpy(payload.message, ciphertext, sizeof(ciphertext));
-      payload.payloadID = 1000;
-      Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);
-      // ----------------------------------------------------------------------------------------------------------------------
-      // unsigned char base64decoded2[50] = {0};
-      // // base64_decode((char*)base64decoded2, (char*)ciphertext, encLen);
-      // base64_decode((char*)base64decoded2, (char*)payload.message, 32);
-      // memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
-      // uint16_t decLen2 = decrypt_to_cleartext(base64decoded2, strlen((char*)base64decoded2), enc_iv);
-      // Serial.print("Decrypted payload.message of length: "); Serial.println(decLen2);
-      // Serial.print("Decrypted payload.message: "); Serial.println((char*)cleartext);
-      // ----------------------------------------------------------------------------------------------------------------------
-      // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
-      radio.write(&payload, sizeof(payload));
+      cipherSend();
     }
   }
   
@@ -337,50 +341,21 @@ void loop() {
   ui.update();
 
   if (broadcast == true) {
+    // try to broadcast efficiently by only updating cpm when necessary
     if (geigerCounter.CPM != geigerCounter.previousCPM) {
       geigerCounter.previousCPM = geigerCounter.CPM;
+
+      // create the message to be broadcast
       memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
-      
-      Serial.println("---------------------------------------------------------------------------");
       memset(message, 0, 56);
       memset(readBuffer, 0, 18);
       strcat(message, credentials);
       strcat(message, "CPM");
       strcat(message, geigerCounter.CPM_str);
       memcpy(readBuffer, message, 18);
-      // ----------------------------------------------------------------------------------------------------------------------
-      Serial.print("readBuffer length: "); Serial.println(sizeof(readBuffer));
-      sprintf((char*)cleartext, "%s", readBuffer); // must not exceed INPUT_BUFFER_LIMIT bytes; may contain a newline
-      // iv_block gets written to, provide own fresh copy... so each iteration of encryption will be the same.
-      uint16_t msgLen = sizeof(readBuffer);
-      memcpy(enc_iv, enc_iv_to, sizeof(enc_iv_to));
-      uint16_t encLen = encrypt_to_ciphertext((char*)cleartext, msgLen, enc_iv);
-      Serial.print("Encrypted length = "); Serial.println(encLen );
-      // ----------------------------------------------------------------------------------------------------------------------
-      // unsigned char base64decoded[50] = {0};
-      // // base64_decode((char*)base64decoded, (char*)ciphertext, encLen);
-      // base64_decode((char*)base64decoded, (char*)ciphertext, 32);
-      // memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
-      // uint16_t decLen = decrypt_to_cleartext(base64decoded, strlen((char*)base64decoded), enc_iv);
-      // Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
-      // Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
-      // ----------------------------------------------------------------------------------------------------------------------
-      memset(payload.message, 0, maxPayloadSize);
-      memcpy(payload.message, ciphertext, sizeof(ciphertext));
-      payload.payloadID = 1000;
-      Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);
-      // ----------------------------------------------------------------------------------------------------------------------
-      // unsigned char base64decoded2[50] = {0};
-      // // base64_decode((char*)base64decoded2, (char*)ciphertext, encLen);
-      // base64_decode((char*)base64decoded2, (char*)payload.message, 32);
-      // memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
-      // uint16_t decLen2 = decrypt_to_cleartext(base64decoded2, strlen((char*)base64decoded2), enc_iv);
-      // Serial.print("Decrypted payload.message of length: "); Serial.println(decLen2);
-      // Serial.print("Decrypted payload.message: "); Serial.println((char*)cleartext);
-      // ----------------------------------------------------------------------------------------------------------------------
-      // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
-      radio.write(&payload, sizeof(payload));
+
+      cipherSend();
     }
   }
 

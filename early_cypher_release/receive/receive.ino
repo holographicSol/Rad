@@ -27,16 +27,16 @@ void aes_init() {
   aesLib.set_paddingmode((paddingMode)0);
 }
 uint16_t encrypt_to_ciphertext(char * msg, uint16_t msgLen, byte iv[]) {
-  Serial.println("Calling encrypt (string)...");
+  // Serial.println("Calling encrypt (string)...");
   // aesLib.get_cipher64_length(msgLen);
   int cipherlength = aesLib.encrypt((byte*)msg, msgLen, (byte*)ciphertext, aes_key, sizeof(aes_key), iv);
                    // uint16_t encrypt(byte input[], uint16_t input_length, char * output, byte key[],int bits, byte my_iv[]);
   return cipherlength;
 }
 uint16_t decrypt_to_cleartext(byte msg[], uint16_t msgLen, byte iv[]) {
-  Serial.print("Calling decrypt...; ");
+  // Serial.print("Calling decrypt...; ");
   uint16_t dec_bytes = aesLib.decrypt(msg, msgLen, (byte*)cleartext, aes_key, sizeof(aes_key), iv);
-  Serial.print("Decrypted bytes: "); Serial.println(dec_bytes);
+  // Serial.print("Decrypted bytes: "); Serial.println(dec_bytes);
   return dec_bytes;
 }
 /* non-blocking wait function */
@@ -154,7 +154,7 @@ void setup() {
   Serial.println("Data Rate:" + String(radio.getDataRate()));
   Serial.println("PA Level: " + String(radio.getPALevel()));
   radio.startListening();
-} 
+}
 
 void loop() {
 
@@ -170,25 +170,28 @@ void loop() {
     // read the payload into payload struct
     uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
     radio.read(&payload, bytes); // fetch payload from FIFO
-    Serial.println("---------------------------------------------------------------------------");
-    Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);       
 
+    // -------------------------------------------------------------------------------------------------------------------------------------
+    // this block allows us to try and filter out unwanted/malicious traffic from manipulating values/functions on this receiver device
+    // Serial.println("---------------------------------------------------------------------------");
+    // Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);       
     // assume decrypt. force all incoming traffic through this before parsing the message for commands
     unsigned char base64decoded[50] = {0};
     base64_decode((char*)base64decoded, (char*)payload.message, 32);
     memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
     uint16_t decLen = decrypt_to_cleartext(payload.message, strlen((char*)payload.message), enc_iv);
-    Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
-    Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
+    // Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
+    // Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
+    // -------------------------------------------------------------------------------------------------------------------------------------
 
     // does decyphered text have correct credentials?
     if (strncmp( (char*)cleartext, credentials, strlen(credentials)-1 ) == 0) {
-      Serial.println("-- access granted. credetials authenticated.");
+      // Serial.println("-- access granted. credetials authenticated.");
 
       // if so then seperate credentials from the rest of the payload message and parse for commands
       memset(message, 0, 56);
       strncpy(message, (char*)cleartext + strlen(credentials), strlen((char*)cleartext) - strlen(credentials));
-      Serial.print("-- message: "); Serial.println(message);
+      // Serial.print("-- message: "); Serial.println(message);
 
       // impulse
       if (strcmp( message, "IMP") == 0) {
@@ -211,6 +214,8 @@ void loop() {
         // Serial.print("CPM: "); Serial.println(chanbuf);
       }
     }
-    else {Serial.println("-- access denied. unauthorized credentials.");}
+    else {
+      // Serial.println("-- access denied. unauthorized credentials.");
+      }
   }
 }
