@@ -25,29 +25,20 @@ uint64_t address[6] = { 0x7878787878LL,
                         0xB3B4B5B60FLL,
                         0xB3B4B5B605LL };
 
+#define maxPayloadSize 10
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
-  char message[10];
+  char message[maxPayloadSize];
 };
 PayloadStruct payload;
 
+#define maxCPM_StrSize maxPayloadSize
 // Geiger Counter
 struct GCStruct {
-  double countsArray[max_count]; // stores each impulse as timestamps
-  double countsArrayTemp[max_count]; // temporarily stores timestamps
-  bool impulse = false; // sets true each interrupt on geiger counter pin
-  bool warmup = true; // sets false after first 60 seconds have passed
-  unsigned long counts = 0; // stores counts and resets to zero every minute
-  unsigned long precisionCounts = 0; // stores how many elements are in counts array
-  unsigned long CPM = 0;
-  char CPM_str[12];
+  unsigned long CPM;
+  char CPM_str[maxCPM_StrSize];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
-  unsigned long maxPeriod = 60000000; //Maximum logging period in microseconds
-  unsigned long currentMicrosMain; // stores current
-  unsigned long previousMicrosMain; // stores previous
-  unsigned long precisionMicros; // stores main loop time
-  char precisionMicros_str[12]; // stores main loop time
 };
 GCStruct geigerCounter;
 
@@ -134,10 +125,10 @@ void loop() {
 
     // cpm
     else if (payload.payloadID == 1111){
-      memset(geigerCounter.CPM_str, 0, 12);
-      memcpy(geigerCounter.CPM_str, payload.message, 12);
+      memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
+      memcpy(geigerCounter.CPM_str, payload.message, maxCPM_StrSize);
       geigerCounter.CPM = atoi(geigerCounter.CPM_str);
-      geigerCounter.uSvh = geigerCounter.CPM * 0.003321969697;
+      geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
     }
   }
 }

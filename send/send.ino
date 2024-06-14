@@ -43,15 +43,15 @@ uint64_t address[6] = { 0x7878787878LL,
                         0xB3B4B5B60FLL,
                         0xB3B4B5B605LL };
 
-// Transmission Payload
+#define maxPayloadSize 10
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
-  char message[10];
+  char message[maxPayloadSize];
 };
 PayloadStruct payload;
 
-
+#define maxCPM_StrSize maxPayloadSize
 // Geiger Counter
 struct GCStruct {
   double countsArray[max_count]; // stores each impulse as timestamps
@@ -59,10 +59,10 @@ struct GCStruct {
   bool impulse = false; // sets true each interrupt on geiger counter pin
   bool warmup = true; // sets false after first 60 seconds have passed
   unsigned long counts; // stores counts and resets to zero every minute
-  unsigned long precisionCounts = 0; // stores how many elements are in counts array
-  unsigned long CPM = 0;
-  unsigned long previousCPM = 0;
-  char CPM_str[12];
+  unsigned long precisionCounts; // stores how many elements are in counts array
+  unsigned long CPM;
+  unsigned long previousCPM;
+  char CPM_str[maxCPM_StrSize];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60; // maximum logging period in seconds.
   unsigned long countsIter;
@@ -204,7 +204,7 @@ void loop() {
 
     if (broadcast == true) {
     // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
-      memset(payload.message, 0, 12);
+      memset(payload.message, 0, maxPayloadSize);
       memcpy(payload.message, "X", 1);
       payload.payloadID = 1000;
       radio.write(&payload, sizeof(payload));
@@ -251,8 +251,8 @@ void loop() {
 
   if (broadcast == true) {
     // transmit the results
-    memset(payload.message, 0, 12);
-    memset(geigerCounter.CPM_str, 0, 12);
+    memset(payload.message, 0, maxPayloadSize);
+    memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
     dtostrf(geigerCounter.CPM, 0, 4, geigerCounter.CPM_str);
     memcpy(payload.message, geigerCounter.CPM_str, sizeof(geigerCounter.CPM_str));
     payload.payloadID = 1111;
