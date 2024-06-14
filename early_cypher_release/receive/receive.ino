@@ -13,8 +13,10 @@ AESLib aesLib;
 #define INPUT_BUFFER_LIMIT (128 + 1) // designed for Arduino UNO, not stress-tested anymore (this works with readBuffer[129])
 unsigned char cleartext[INPUT_BUFFER_LIMIT] = {0}; // THIS IS INPUT BUFFER (FOR TEXT)
 unsigned char ciphertext[2*INPUT_BUFFER_LIMIT] = {0}; // THIS IS OUTPUT BUFFER (FOR BASE64-ENCODED ENCRYPTED DATA)
-unsigned char readBuffer[18] = "username:password";
-unsigned char credentials[12] = {0};
+// unsigned char readBuffer[18] = "uname:pass:";
+char creds[18];
+
+char xyz[56];
 // AES Encryption Key (same as in node-js example)
 byte aes_key[] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C };
 // General initialization vector (same as in node-js example) (you must use your own IV's in production for full security!!!)
@@ -128,7 +130,10 @@ void setup() {
   pinMode(led_red, OUTPUT);
   pinMode(speaker_0, OUTPUT);
   digitalWrite(speaker_0, LOW);
-  digitalWrite(led_red, LOW); 
+  digitalWrite(led_red, LOW);
+
+  //
+  strcpy(creds, "uname:pass:");
 
   // radio
   if (!radio.begin()) {
@@ -160,6 +165,9 @@ void loop() {
   // get payload
   uint8_t pipe;
   if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
+    memset(payload.message, 0, sizeof(payload.message));
+    memset(cleartext, 0, sizeof(cleartext));
+
     Serial.println("---------------------------------------------------------------------------");
     uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
     radio.read(&payload, bytes); // fetch payload from FIFO
@@ -167,44 +175,42 @@ void loop() {
 
     // ----------------------------------------------------------------------------------------------------------------------
     unsigned char base64decoded[50] = {0};
-    // base64_decode((char*)base64decoded, (char*)ciphertext, encLen);
     base64_decode((char*)base64decoded, (char*)payload.message, 32);
     memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
-    // uint16_t decLen = decrypt_to_cleartext(base64decoded, strlen((char*)base64decoded), enc_iv);
     uint16_t decLen = decrypt_to_cleartext(payload.message, strlen((char*)payload.message), enc_iv);
     Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
     Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
     // ----------------------------------------------------------------------------------------------------------------------
 
     // example
-    if (strncmp( (char*)cleartext, "username:pass", 13 ) == 0) {
+    if (strncmp( (char*)cleartext, creds, strlen(creds)-1 ) == 0) {
       Serial.println("-- access granted. credetials authenticated.");
-    }
 
-    // impulse message
-    else if (strncmp( (char*)cleartext, "XXXXXXXXXXXXX", 13 ) == 0) {
-      Serial.println("-- access granted. credetials authenticated.");
-      digitalWrite(speaker_0, HIGH);
-      digitalWrite(speaker_0, HIGH);
-      digitalWrite(led_red, HIGH); // turn the LED on (HIGH is the voltage level)
-      delay(3);
-      digitalWrite(led_red, LOW);  // turn the LED off by making the voltage LOW
-      digitalWrite(speaker_0, LOW);
-    }
+      memset(xyz, 0, 56);
+      strncpy(xyz, (char*)cleartext + strlen(creds), strlen((char*)cleartext) - strlen(creds));
+      Serial.print("-- message: "); Serial.println(xyz);
 
-    // cpm message
-    else if (strncmp( (char*)cleartext, "CPM", 3 ) == 0) {
-      Serial.println("-- access granted. credetials authenticated.");
-      char chanbuf[32];
-      strncpy(chanbuf, (char*)cleartext + 3, strlen((char*)cleartext) - 3);
-      Serial.print("CPM: "); Serial.println(chanbuf);
-      memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
-      memcpy(geigerCounter.CPM_str, chanbuf, maxCPM_StrSize);
-      geigerCounter.CPM = atoi(geigerCounter.CPM_str);
-      geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
-    }
+      // impulse message
+      if (strcmp( xyz, "IMP") == 0) {
+        digitalWrite(speaker_0, HIGH);
+        digitalWrite(speaker_0, HIGH);
+        digitalWrite(led_red, HIGH); // turn the LED on (HIGH is the voltage level)
+        delay(3);
+        digitalWrite(led_red, LOW);  // turn the LED off by making the voltage LOW
+        digitalWrite(speaker_0, LOW);
+      }
 
+      // cpm message
+      else if (strncmp( xyz, "CPM", 3) == 0) {
+        char var[32];
+        strncpy(var, xyz + 3, strlen(xyz) - 3);
+        memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
+        memcpy(geigerCounter.CPM_str, var, maxCPM_StrSize);
+        geigerCounter.CPM = atoi(geigerCounter.CPM_str);
+        geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
+        // Serial.print("CPM: "); Serial.println(chanbuf);
+      }
+    }
     else {Serial.println("-- access denied. unauthorized credentials.");}
-
   }
 }
