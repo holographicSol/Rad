@@ -132,7 +132,7 @@ void setup() {
   digitalWrite(speaker_0, LOW);
   digitalWrite(led_red, LOW);
 
-  //
+  // default creds
   strcpy(creds, "uname:pass:");
 
   // radio
