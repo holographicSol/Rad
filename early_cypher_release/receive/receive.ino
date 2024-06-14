@@ -10,10 +10,9 @@
 #include "AESLib.h"
 #define BAUD 9600
 AESLib aesLib;
-#define INPUT_BUFFER_LIMIT (128 + 1) // designed for Arduino UNO, not stress-tested anymore (this works with readBuffer[129])
+#define INPUT_BUFFER_LIMIT (128 + 1) // designed for Arduino UNO, not stress-tested anymore (this works with message[129])
 unsigned char cleartext[INPUT_BUFFER_LIMIT] = {0}; // THIS IS INPUT BUFFER (FOR TEXT)
 unsigned char ciphertext[2*INPUT_BUFFER_LIMIT] = {0}; // THIS IS OUTPUT BUFFER (FOR BASE64-ENCODED ENCRYPTED DATA)
-// unsigned char readBuffer[18] = "uname:pass:";
 char credentials[18];
 char message[56];
 // AES Encryption Key (same as in node-js example)
