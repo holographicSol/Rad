@@ -20,22 +20,13 @@ Extremely sensitive to sunlight unless geiger muller tube is covered.
 Requires system remains on. If the system looses power then you have at least sixty seconds before precision CPM can
 be updated.
 
-Micro second precision.
-
-Rad now uses two ESP32's on the transmitter, this is to speed up any measurements taken by moving the RF24 off the
-MCU that is measuing and move the RF24 onto its own ESP32 where it listens ready to transmit to the receiver. This
-makes the system extremely fast even while transmitting and a very powerful setup which can be easily reimplemented
-for different projects for different reasons.
-
-Current precision is typically less than us50 (< 50 microseconds).
-
 
 ![plot](./resources/ZeroShieldTesting.jpg)
 
 
 Requirements:
 
-3x KEYESTUDIO ESP32 WROOM Development Board
+2x KEYESTUDIO ESP32 WROOM Development Board
 
 2x NRF24L01+PA+LNA Wireless Transceivers.
 
