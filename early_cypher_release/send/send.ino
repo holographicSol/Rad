@@ -332,7 +332,7 @@ void loop() {
   if (broadcast == true) {
     if (geigerCounter.CPM != geigerCounter.previousCPM) {
       geigerCounter.previousCPM = geigerCounter.CPM;
-      dtostrf(geigerCounter.CPM, 0, 4, geigerCounter.CPM_str);
+      dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
       
       Serial.println("---------------------------------------------------------------------------");
       char xyz[18];
