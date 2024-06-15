@@ -69,9 +69,9 @@ byte enc_iv_from[N_BLOCK] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0x
 // is reacting to a precise cpm reading within the shortest time you can. if instead you are actually trying to get as
 // precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase
 // max count from 10240 providing you beleive there is the memory and performance available on the MCU your building for.
-#define max_count       100
-#define warning_level_0 99  // warn at this cpm
-#define syncInterval    1   // how often transmit values outside of values being transmitted if values change
+#define max_count        100
+#define warning_level_0   99   // warn at this cpm
+#define syncIntervalCPM    1   // how often transmit values outside of values being transmitted if values change
 
 #define CE_PIN     25 // radio can use tx
 #define CSN_PIN    26 // radio can use rx
@@ -131,7 +131,7 @@ struct TimeStruct {
   unsigned long currentSecond;
   double timestamp;
   double interTime;
-  double previousTimestampSecond; // a placeholder for a previous time (optionally used)
+  double previousTimestampSyncCPM; // a placeholder for a previous time (optionally used)
 };
 TimeStruct timeData;
 
@@ -342,9 +342,9 @@ void loop() {
     // todo: broadcast efficiently by only transmitting cpm when cpm changes and by providing a periodic
     // transmission for syncronization between devices accross dropped packets
     //
-    if ((geigerCounter.CPM != geigerCounter.previousCPM) || ( timeData.timestamp > (timeData.previousTimestampSecond+syncInterval) )) {
+    if ((geigerCounter.CPM != geigerCounter.previousCPM) || ( timeData.timestamp > (timeData.previousTimestampSyncCPM+syncIntervalCPM) )) {
       geigerCounter.previousCPM = geigerCounter.CPM;
-      timeData.previousTimestampSecond = timeData.timestamp;
+      timeData.previousTimestampSyncCPM = timeData.timestamp;
       // create the message to be broadcast
       memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
