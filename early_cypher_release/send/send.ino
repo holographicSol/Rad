@@ -23,9 +23,9 @@ unsigned char cleartext[INPUT_BUFFER_LIMIT] = {0}; // THIS IS INPUT BUFFER (FOR 
 unsigned char ciphertext[2*INPUT_BUFFER_LIMIT] = {0}; // THIS IS OUTPUT BUFFER (FOR BASE64-ENCODED ENCRYPTED DATA)
 char message[56];
 char credentials[18];
-// AES Encryption Key (same as in node-js example)
+// AES Encryption Key (CHANGME)
 byte aes_key[] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C };
-// General initialization vector (same as in node-js example) (you must use your own IV's in production for full security!!!)
+// General initialization vector (CHANGME) (you must use your own IV's in production for full security!!!)
 byte aes_iv[N_BLOCK] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
 
 // Generate IV (once)
@@ -277,7 +277,6 @@ void cipherSend() {
   radio.write(&payload, sizeof(payload));
 }
 
-
 void loop() {
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.mainLoopTimeStart = micros();
@@ -295,12 +294,10 @@ void loop() {
       memset(message, 0, 56);
       strcat(message, credentials);
       strcat(message, "IMP");
-
       cipherSend();
     }
   }
   
-
   // set previous time each minute
   if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
     Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
@@ -350,7 +347,6 @@ void loop() {
       strcat(message, credentials);
       strcat(message, "CPM");
       strcat(message, geigerCounter.CPM_str);
-
       cipherSend();
     }
   }
