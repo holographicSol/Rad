@@ -160,7 +160,6 @@ void tubeImpulseISR() {
   geigerCounter.impulse = true;
   if (geigerCounter.countsIter < max_count) {geigerCounter.countsIter++;}
   else {geigerCounter.countsIter=0;}
-  // add timestamp (per loop) to timestamps in array
   geigerCounter.countsArray[geigerCounter.countsIter] = timeData.timestamp;
 }
 
@@ -224,18 +223,17 @@ void setup() {
 }
 
 void cipherSend() {
-  // ----------------------------------------------------------------------------------------------------------------------
   Serial.println("---------------------------------------------------------------------------");
   payload.payloadID++;
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
+  // encrypt
   aes.encrypted = encrypt(aes.cleartext, aes.enc_iv);
   sprintf(aes.ciphertext, "%s", aes.encrypted.c_str());
-  // ----------------------------------------------------------------------------------------------------------------------
+  // load the payload
   memset(payload.message, 0, sizeof(payload.message));
   memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message);
-  // ----------------------------------------------------------------------------------------------------------------------
-  // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
+  // send
   radio.write(&payload, sizeof(payload));
   // uncomment to test immediate replay attack
   // delay(1000);
@@ -249,16 +247,15 @@ void loop() {
   // set current timestamp to be used this loop same millisecond+- depending on loop speed.
   timeData.timestamp = currentTime();
 
-  // Serial.print("currentTime: "); Serial.println(timeData.currentTime, 12);
-
   // check if impulse
   if (geigerCounter.impulse == true) {
     geigerCounter.impulse = false;
     if (broadcast == true) {
-      // create the message to be broadcast
+      // create transmission message
       memset(aes.cleartext, 0, sizeof(aes.cleartext));
       strcat(aes.cleartext, aes.credentials);
       strcat(aes.cleartext, "IMP");
+      // encrypt and send
       cipherSend();
     }
   }
@@ -300,25 +297,24 @@ void loop() {
 
   if (broadcast == true) {
 
-    // todo: broadcast efficiently by only transmitting cpm when cpm changes and by providing a periodic
-    // transmission for syncronization between devices accross dropped packets
+    // todo: broadcast periodically outside of value change
     //
     if (geigerCounter.CPM != geigerCounter.previousCPM) {
       geigerCounter.previousCPM = geigerCounter.CPM;
       timeData.previousTimestampSecond = timeData.timestamp;
-      // create the message to be broadcast
+      // create transmission message
       memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
       memset(aes.cleartext, 0, sizeof(aes.cleartext));
       strcat(aes.cleartext, aes.credentials);
       strcat(aes.cleartext, "CPM");
       strcat(aes.cleartext, geigerCounter.CPM_str);
+      // encrypt and send
       cipherSend();
     }
   }
 
   // store time taken to complete
   timeData.mainLoopTimeTaken = micros() - timeData.mainLoopTimeStart;
-  // Serial.println("timeData.mainLoopTimeTaken:" + String(timeData.mainLoopTimeTaken));
 }
 
