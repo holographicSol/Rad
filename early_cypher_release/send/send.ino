@@ -340,18 +340,18 @@ void loop() {
     // todo: broadcast efficiently by only transmitting cpm when cpm changes and by providing a periodic
     // transmission for syncronization between devices accross dropped packets
     //
-    if (geigerCounter.CPM != geigerCounter.previousCPM) {
-      geigerCounter.previousCPM = geigerCounter.CPM;
+    // if (geigerCounter.CPM != geigerCounter.previousCPM) {
+    //   geigerCounter.previousCPM = geigerCounter.CPM;
 
-      // create the message to be broadcast
-      memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
-      dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
-      memset(message, 0, 56);
-      strcat(message, credentials);
-      strcat(message, "CPM");
-      strcat(message, geigerCounter.CPM_str);
-      cipherSend();
-    }
+    // create the message to be broadcast
+    memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
+    dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
+    memset(message, 0, 56);
+    strcat(message, credentials);
+    strcat(message, "CPM");
+    strcat(message, geigerCounter.CPM_str);
+    cipherSend();
+  // }
   }
 
   // store time taken to complete
