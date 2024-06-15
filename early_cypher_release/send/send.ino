@@ -343,7 +343,6 @@ void loop() {
     // transmission for syncronization between devices accross dropped packets
     //
     if ((geigerCounter.CPM != geigerCounter.previousCPM) || ( timeData.timestamp > (timeData.previousTimestampSecond+syncInterval) )) {
-      // Serial.println("sync");
       geigerCounter.previousCPM = geigerCounter.CPM;
       timeData.previousTimestampSecond = timeData.timestamp;
       // create the message to be broadcast
