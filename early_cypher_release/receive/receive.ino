@@ -193,7 +193,7 @@ void loop() {
       Serial.print("-- message: "); Serial.println(message);
 
       // impulse
-      if (strcmp( message, "IMP") == 0) {
+      else if (strncmp( message, "IMP", 3) == 0) {
         digitalWrite(speaker_0, HIGH);
         digitalWrite(speaker_0, HIGH);
         digitalWrite(led_red, HIGH);
