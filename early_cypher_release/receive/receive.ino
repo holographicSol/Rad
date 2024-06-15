@@ -171,7 +171,9 @@ void loop() {
     radio.read(&payload, bytes); // fetch payload from FIFO
 
     // -----------------------------------------------------------------------------------------------------------------------------------------
-    // decryption. try to ensure that values received are the values we sent to ourselves by filtering out unwanted traffic.
+    // decryption. we only want to display values and run functions that we are sending to ourselves from the remote sensor. we would like to
+    // have more confidence that our values are legitimate, so before doing anything with the message, first send the message through the decipher
+    // function and if the message is not garbage afterwards AND it somehow has the correct creds then further scrutinize the message for commands. 
     //
     // Serial.println("---------------------------------------------------------------------------");
     // Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);    
