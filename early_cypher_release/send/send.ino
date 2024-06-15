@@ -82,7 +82,6 @@ struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
   char message[1000];
-  // unsigned char message[2*INPUT_BUFFER_LIMIT] = {0};
 };
 PayloadStruct payload;
 // ----------------------------------------------------------------------------------------------------------------------
@@ -291,9 +290,7 @@ void loop() {
   ui.update();
 
   if (broadcast == true) {
-
     // todo: broadcast periodically outside of value change
-    //
     if (geigerCounter.CPM != geigerCounter.previousCPM) {
       geigerCounter.previousCPM = geigerCounter.CPM;
       timeData.previousTimestampSecond = timeData.timestamp;

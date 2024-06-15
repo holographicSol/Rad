@@ -69,7 +69,6 @@ struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
   char message[1000];
-  // unsigned char message[2*INPUT_BUFFER_LIMIT] = {0};
 };
 PayloadStruct payload;
 // ----------------------------------------------------------------------------------------------------------------------
@@ -168,9 +167,11 @@ void loop() {
     // assume deccrypt
     aes.decrypted = decrypt(payload.message, aes.dec_iv);
     Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.decrypted);
+
     // convert to char array
     memset(aes.cleartext, 0, sizeof(aes.cleartext));
     aes.decrypted.toCharArray(aes.cleartext, sizeof(aes.cleartext));
+
     // now check for correct credentials
     if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
       Serial.println("[ACCEPTED]");
