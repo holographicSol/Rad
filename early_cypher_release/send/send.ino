@@ -234,8 +234,8 @@ void setup() {
 void cipherSend() {
   // ----------------------------------------------------------------------------------------------------------------------
   Serial.println("---------------------------------------------------------------------------");
-  Serial.print("ENCRYPTION (char*): "); Serial.println(messageCommand);
-  encrypted = encrypt(messageCommand, enc_iv);
+  Serial.print("cleartext: "); Serial.println(cleartext);
+  encrypted = encrypt(cleartext, enc_iv);
   sprintf(ciphertext, "%s", encrypted.c_str());
   Serial.print("Encrypted Result: "); Serial.println(encrypted);
   // ----------------------------------------------------------------------------------------------------------------------
@@ -266,9 +266,9 @@ void loop() {
     geigerCounter.impulse = false;
     if (broadcast == true) {
       // create the message to be broadcast
-      memset(messageCommand, 0, 16);
-      strcat(messageCommand, credentials);
-      strcat(messageCommand, "IMP");
+      memset(cleartext, 0, sizeof(cleartext));
+      strcat(cleartext, credentials);
+      strcat(cleartext, "IMP");
       cipherSend();
     }
   }
@@ -321,10 +321,10 @@ void loop() {
       // create the message to be broadcast
       memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
-      memset(messageCommand, 0, 16);
-      strcat(messageCommand, credentials);
-      strcat(messageCommand, "CPM");
-      strcat(messageCommand, geigerCounter.CPM_str);
+      memset(cleartext, 0, sizeof(cleartext));
+      strcat(cleartext, credentials);
+      strcat(cleartext, "CPM");
+      strcat(cleartext, geigerCounter.CPM_str);
       cipherSend();
     }
   }
