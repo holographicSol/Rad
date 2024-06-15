@@ -1,19 +1,33 @@
 // Rad Receiver written by Benjamin Jack Cullen
 // Collect and display sensor data received from a remote device.
 
+// ----------------------------------------------------------------------------------------------------------------------
 #include <printf.h>
 #include <SPI.h>
 #include <RF24.h>
 #include <SSD1306Wire.h>
 #include <OLEDDisplayUi.h>
 #include <AESLib.h>
-
 // ----------------------------------------------------------------------------------------------------------------------
-char messageCommand[16];
-char messageValue[16];
-
+#define max_count 100
+#define CE_PIN 25 // radio can use tx
+#define CSN_PIN 26 // radio can use rx
+#define warning_level_0 99 // warn at this cpm 
+// ----------------------------------------------------------------------------------------------------------------------
+SSD1306Wire display(0x3c, SDA, SCL);
+OLEDDisplayUi ui ( &display );
+RF24 radio(CE_PIN, CSN_PIN);
 AESLib aesLib;
-
+// ----------------------------------------------------------------------------------------------------------------------
+int led_red = 32; // led 32 RED 2 BLUE 4 GREEN
+int speaker_0 = 33; // geiger counter sound
+uint64_t address[6] = { 0x7878787878LL,
+                        0xB3B4B5B6F1LL,
+                        0xB3B4B5B6CDLL,
+                        0xB3B4B5B6A3LL,
+                        0xB3B4B5B60FLL,
+                        0xB3B4B5B605LL };
+// ----------------------------------------------------------------------------------------------------------------------
 struct AESStruct {
   byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
   byte aes_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
@@ -27,7 +41,6 @@ struct AESStruct {
   int msgLen;
 };
 AESStruct aes;
-
 void aes_init() {
   aesLib.gen_iv(aes.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
@@ -38,7 +51,6 @@ String encrypt(char * msg, byte iv[]) {
   aesLib.encrypt64((byte*)msg, aes.msgLen, encrypted, aes.aes_key, sizeof(aes.aes_key), iv);
   return String(encrypted);
 }
-
 String decrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
   char decrypted[aes.msgLen]; // half may be enough
@@ -46,35 +58,20 @@ String decrypt(char * msg, byte iv[]) {
   return String(decrypted);
 }
 // ----------------------------------------------------------------------------------------------------------------------
-
-#define max_count 100
-#define CE_PIN 25 // radio can use tx
-#define CSN_PIN 26 // radio can use rx
-#define warning_level_0 99 // warn at this cpm 
-
-SSD1306Wire display(0x3c, SDA, SCL);
-OLEDDisplayUi ui ( &display );
-RF24 radio(CE_PIN, CSN_PIN);
-
-int led_red = 32; // led 32 RED 2 BLUE 4 GREEN
-int speaker_0 = 33; // geiger counter sound
-
-uint64_t address[6] = { 0x7878787878LL,
-                        0xB3B4B5B6F1LL,
-                        0xB3B4B5B6CDLL,
-                        0xB3B4B5B6A3LL,
-                        0xB3B4B5B60FLL,
-                        0xB3B4B5B605LL };
-
-#define maxPayloadSize 1000
+struct CommandServerStruct {
+  char messageCommand[16];
+  char messageValue[16];
+};
+CommandServerStruct commandserver;
+// ----------------------------------------------------------------------------------------------------------------------
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
-  char message[maxPayloadSize];
+  char message[1000];
   // unsigned char message[2*INPUT_BUFFER_LIMIT] = {0};
 };
 PayloadStruct payload;
-
+// ----------------------------------------------------------------------------------------------------------------------
 // Geiger Counter
 struct GCStruct {
   signed long CPM;
@@ -82,7 +79,7 @@ struct GCStruct {
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
 };
 GCStruct geigerCounter;
-
+// ----------------------------------------------------------------------------------------------------------------------
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
@@ -92,10 +89,9 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
   display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
 }
-
-// this array keeps function pointers to all frames are the single views that slide in
-FrameCallback frames[] = { GC_Measurements };
+FrameCallback frames[] = { GC_Measurements }; // keeps function pointers to all frames are the single views that slide in
 int frameCount = 1;
+// ----------------------------------------------------------------------------------------------------------------------
 
 void setup() {
 
@@ -177,15 +173,14 @@ void loop() {
     // now check for correct credentials
     if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
       Serial.println("[ACCEPTED]");
-      // -----------------------------------------------------------------------------------------------------------------------------------------
 
       // if credentials then seperate credentials from the rest of the payload message and parse for commands
-      memset(messageCommand, 0, sizeof(messageCommand));
-      strncpy(messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
-      Serial.print("[COMMAND] "); Serial.println(messageCommand);
+      memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
+      strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
+      Serial.print("[COMMAND] "); Serial.println(commandserver.messageCommand);
 
       // impulse
-      if (strncmp( messageCommand, "IMP", 3) == 0) {
+      if (strncmp( commandserver.messageCommand, "IMP", 3) == 0) {
         digitalWrite(speaker_0, HIGH);
         digitalWrite(speaker_0, HIGH);
         digitalWrite(led_red, HIGH);
@@ -195,11 +190,11 @@ void loop() {
       }
 
       // cpm
-      else if (strncmp( messageCommand, "CPM", 3) == 0) {
-        memset(messageValue, 0, sizeof(messageValue));
-        strncpy(messageValue, messageCommand + 3, strlen(messageCommand) - 3);
+      else if (strncmp( commandserver.messageCommand, "CPM", 3) == 0) {
+        memset(commandserver.messageValue, 0, sizeof(commandserver.messageValue));
+        strncpy(commandserver.messageValue, commandserver.messageCommand + 3, strlen(commandserver.messageCommand) - 3);
         memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
-        memcpy(geigerCounter.CPM_str, messageValue, sizeof(geigerCounter.CPM_str));
+        memcpy(geigerCounter.CPM_str, commandserver.messageValue, sizeof(geigerCounter.CPM_str));
         geigerCounter.CPM = atoi(geigerCounter.CPM_str);
         geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
       }

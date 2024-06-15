@@ -1,6 +1,7 @@
 // Rad Sender written by Benjamin Jack Cullen
 // Collect, display and send sensor data to a remote device.
 
+// ----------------------------------------------------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
 #include <printf.h>
@@ -12,13 +13,35 @@
 #include <SSD1306Wire.h>
 #include <OLEDDisplayUi.h>
 #include <AESLib.h>
-
 // ----------------------------------------------------------------------------------------------------------------------
-char messageCommand[16];
-char messageValue[16];
-
+// memory limitations require counts log max.
+// on esp32 a maxcount of 100 should mean main loop time will be half the time of main loop time with max count 10240.
+// it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in
+// is reacting to a precise cpm reading within the shortest time you can. if instead you are actually trying to get as
+// precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase
+// max count from 10240 providing you beleive there is the memory and performance available on the MCU your building for.
+#define max_count       100
+#define warning_level_0  99 // warn at this cpm 
+#define CE_PIN           25 // radio can use tx
+#define CSN_PIN          26 // radio can use rx
+#define GEIGER_PIN       27
+// ----------------------------------------------------------------------------------------------------------------------
+RF24 radio(CE_PIN, CSN_PIN);
+SSD1306Wire display(0x3c, SDA, SCL);
+OLEDDisplayUi ui(&display);
 AESLib aesLib;
-
+// ----------------------------------------------------------------------------------------------------------------------
+// on esp32 if broadcast false then precision is to approximately 40 microseconds at around 35 cpm with max_count 100.
+// on esp32 if broadcast true then precision is to approximately 700 microseconds at around 35 cpm with max_count 100.
+volatile bool broadcast = true;
+// Radio Addresses
+uint64_t address[6] = { 0x7878787878LL,
+                        0xB3B4B5B6F1LL,
+                        0xB3B4B5B6CDLL,
+                        0xB3B4B5B6A3LL,
+                        0xB3B4B5B60FLL,
+                        0xB3B4B5B605LL };
+// ----------------------------------------------------------------------------------------------------------------------
 struct AESStruct {
   byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
   byte aes_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
@@ -32,19 +55,16 @@ struct AESStruct {
   int msgLen;
 };
 AESStruct aes;
-
 void aes_init() {
   aesLib.gen_iv(aes.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
 }
-
 String encrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
   char encrypted[2 * aes.msgLen];
   aesLib.encrypt64((byte*)msg, aes.msgLen, encrypted, aes.aes_key, sizeof(aes.aes_key), iv);
   return String(encrypted);
 }
-
 String decrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
   char decrypted[aes.msgLen]; // half may be enough
@@ -52,36 +72,12 @@ String decrypt(char * msg, byte iv[]) {
   return String(decrypted);
 }
 // ----------------------------------------------------------------------------------------------------------------------
-
-// memory limitations require counts log max.
-// on esp32 a maxcount of 100 should mean main loop time will be half the time of main loop time with max count 10240.
-// it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in
-// is reacting to a precise cpm reading within the shortest time you can. if instead you are actually trying to get as
-// precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase
-// max count from 10240 providing you beleive there is the memory and performance available on the MCU your building for.
-#define max_count       100
-#define warning_level_0 99 // warn at this cpm 
-
-#define CE_PIN     25 // radio can use tx
-#define CSN_PIN    26 // radio can use rx
-#define GEIGER_PIN 27
-
-// on esp32 if broadcast false then precision is to approximately 40 microseconds at around 35 cpm with max_count 100.
-// on esp32 if broadcast true then precision is to approximately 700 microseconds at around 35 cpm with max_count 100.
-volatile bool broadcast = true;
-
-RF24 radio(CE_PIN, CSN_PIN);
-SSD1306Wire display(0x3c, SDA, SCL);
-OLEDDisplayUi ui(&display);
-
-// Radio Addresses
-uint64_t address[6] = { 0x7878787878LL,
-                        0xB3B4B5B6F1LL,
-                        0xB3B4B5B6CDLL,
-                        0xB3B4B5B6A3LL,
-                        0xB3B4B5B60FLL,
-                        0xB3B4B5B605LL };
-
+struct CommandServerStruct {
+  char messageCommand[16];
+  char messageValue[16];
+};
+CommandServerStruct commandserver;
+// ----------------------------------------------------------------------------------------------------------------------
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
@@ -89,7 +85,7 @@ struct PayloadStruct {
   // unsigned char message[2*INPUT_BUFFER_LIMIT] = {0};
 };
 PayloadStruct payload;
-
+// ----------------------------------------------------------------------------------------------------------------------
 // Geiger Counter
 struct GCStruct {
   double countsArray[max_count]; // stores each impulse as timestamps
@@ -106,7 +102,7 @@ struct GCStruct {
   unsigned long countsIter;
 };
 GCStruct geigerCounter;
-
+// ----------------------------------------------------------------------------------------------------------------------
 struct TimeStruct {
   double previousTimestamp; // a placeholder for a previous time (optionally used)
   unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
@@ -121,6 +117,21 @@ struct TimeStruct {
   double previousTimestampSecond; // a placeholder for a previous time (optionally used)
 };
 TimeStruct timeData;
+// ----------------------------------------------------------------------------------------------------------------------
+// frame to be displayed on ssd1306 182x64
+void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+  else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
+  display->drawString(display->getWidth()/2, 25, "cpm");
+  display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
+  display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
+  display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
+}
+// this array keeps function pointers to all frames are the single views that slide in
+FrameCallback frames[] = { GC_Measurements };
+int frameCount = 1;
+// ----------------------------------------------------------------------------------------------------------------------
 
 // create a timestamp
 double currentTime() {
@@ -161,21 +172,6 @@ void BGTubeImpulseISR() {
   geigerCounter.counts++;
   geigerCounter.impulse = true;
 }
-
-// frame to be displayed on ssd1306 182x64
-void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  display->setTextAlignment(TEXT_ALIGN_CENTER);
-  if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
-  else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
-  display->drawString(display->getWidth()/2, 25, "cpm");
-  display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
-  display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
-  display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
-}
-
-// this array keeps function pointers to all frames are the single views that slide in
-FrameCallback frames[] = { GC_Measurements };
-int frameCount = 1;
 
 void setup() {
 
