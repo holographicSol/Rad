@@ -337,7 +337,9 @@ void loop() {
 
   if (broadcast == true) {
 
-    // try to broadcast efficiently by only updating cpm when necessary
+    // todo: broadcast efficiently by only transmitting cpm when cpm changes and by providing a periodic
+    // transmission for syncronization between devices accross dropped packets
+    //
     if (geigerCounter.CPM != geigerCounter.previousCPM) {
       geigerCounter.previousCPM = geigerCounter.CPM;
 
