@@ -8,52 +8,49 @@
 
 // ----------------------------------------------------------------------------------------------------------------------
 #include "AESLib.h"
-#define BAUD 9600
 AESLib aesLib;
-#define INPUT_BUFFER_LIMIT (128 + 1) // designed for Arduino UNO, not stress-tested anymore (this works with message[129])
-unsigned char cleartext[INPUT_BUFFER_LIMIT] = {0}; // THIS IS INPUT BUFFER (FOR TEXT)
-unsigned char ciphertext[2*INPUT_BUFFER_LIMIT] = {0}; // THIS IS OUTPUT BUFFER (FOR BASE64-ENCODED ENCRYPTED DATA)
-char credentials[18];
-char message[56];
-char messageValue[32];
-// AES Encryption Key (CHANGME)
-byte aes_key[] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C };
-// General initialization vector (CHANGME) (you must use your own IV's in production for full security!!!)
-byte aes_iv[N_BLOCK] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
 
+String plaintext = "12345678;";
+char cleartext[256];
+char ciphertext[512];
+char message[200] = {0};
+char credentials[16];
+char messageValue[32];
+// AES Encryption Key
+byte aes_key[] = { 0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30 };
+
+// General initialization vector (use your own)
+byte aes_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+byte enc_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to, reqires always fresh copy.
+byte dec_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to, reqires always fresh copy.
 // Generate IV (once)
 void aes_init() {
   aesLib.gen_iv(aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
+  // encrypt("AAAAAAAAAA", aes_iv); // workaround for incorrect B64 functionality on first run... initing b64 is not enough
 }
-uint16_t encrypt_to_ciphertext(char * msg, uint16_t msgLen, byte iv[]) {
-  // Serial.println("Calling encrypt (string)...");
-  // aesLib.get_cipher64_length(msgLen);
-  int cipherlength = aesLib.encrypt((byte*)msg, msgLen, (byte*)ciphertext, aes_key, sizeof(aes_key), iv);
-                   // uint16_t encrypt(byte input[], uint16_t input_length, char * output, byte key[],int bits, byte my_iv[]);
-  return cipherlength;
+
+String encrypt(char * msg, byte iv[]) {
+  unsigned long ms = micros();
+  int msgLen = strlen(msg);
+  char encrypted[2 * msgLen];
+  aesLib.encrypt64((byte*)msg, msgLen, encrypted, aes_key, sizeof(aes_key), iv);
+  Serial.print("Encryption took: ");
+  Serial.print(micros() - ms);
+  Serial.println("us");
+  return String(encrypted);
 }
-uint16_t decrypt_to_cleartext(byte msg[], uint16_t msgLen, byte iv[]) {
-  // Serial.print("Calling decrypt...; ");
-  uint16_t dec_bytes = aesLib.decrypt(msg, msgLen, (byte*)cleartext, aes_key, sizeof(aes_key), iv);
-  // Serial.print("Decrypted bytes: "); Serial.println(dec_bytes);
-  return dec_bytes;
+
+String decrypt(char * msg, byte iv[]) {
+  unsigned long ms = micros();
+  int msgLen = strlen(msg);
+  char decrypted[msgLen]; // half may be enough
+  aesLib.decrypt64(msg, msgLen, (byte*)decrypted, aes_key, sizeof(aes_key), iv);
+  Serial.print("Decryption [2] took: ");
+  Serial.print(micros() - ms);
+  Serial.println("us");
+  return String(decrypted);
 }
-/* non-blocking wait function */
-void wait(unsigned long milliseconds) {
-  unsigned long timeout = millis() + milliseconds;
-  while (millis() < timeout) {
-    yield();
-  }
-}
-unsigned long loopcount = 0;
-// Working IV buffer: Will be updated after encryption to follow up on next block.
-// But we don't want/need that in this test, so we'll copy this over with enc_iv_to/enc_iv_from
-// in each loop to keep the test at IV iteration 1. We could go further, but we'll get back to that later when needed.
-// General initialization vector (same as in node-js example) (you must use your own IV's in production for full security!!!)
-byte enc_iv[N_BLOCK] =      { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
-byte enc_iv_to[N_BLOCK]   = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
-byte enc_iv_from[N_BLOCK] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
 // ----------------------------------------------------------------------------------------------------------------------
 
 #define max_count 100
@@ -75,11 +72,12 @@ uint64_t address[6] = { 0x7878787878LL,
                         0xB3B4B5B60FLL,
                         0xB3B4B5B605LL };
 
+unsigned long previousPayloadID;
 #define maxPayloadSize 1000
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
-  unsigned char message[maxPayloadSize];
+  char message[maxPayloadSize];
   // unsigned char message[2*INPUT_BUFFER_LIMIT] = {0};
 };
 PayloadStruct payload;
@@ -132,7 +130,8 @@ void setup() {
   digitalWrite(led_red, LOW);
 
   // default credentials
-  strcpy(credentials, "lDeO8:!*C8:");
+  aes_init();
+  strcpy(credentials, "user:pass:");
 
   // radio
   if (!radio.begin()) {
@@ -176,26 +175,22 @@ void loop() {
     // have more confidence that our values are legitimate, so before doing anything with the message, first send the message through the decipher
     // function and if the message is not garbage afterwards AND it somehow has the correct creds then further scrutinize the message for commands. 
     //
-    // Serial.println("---------------------------------------------------------------------------");
-    // Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);    
-    // 
-    unsigned char base64decoded[50] = {0};
-    base64_decode((char*)base64decoded, (char*)payload.message, 32);
-    memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
-    uint16_t decLen = decrypt_to_cleartext(payload.message, strlen((char*)payload.message), enc_iv);
-    // Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
-    // Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
-    //
+    Serial.println("---------------------------------------------------------------------------");
+    Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);    
+    Serial.print("DECRYPTION (char*): "); Serial.println(payload.message);
+    String decrypted = decrypt(payload.message, dec_iv);
+    Serial.print("Decrypted Result: "); Serial.println(decrypted);
+    decrypted.toCharArray(cleartext, sizeof(cleartext));
+
     // now check for correct credentials
-    if (strncmp( (char*)cleartext, credentials, strlen(credentials)-1 ) == 0) {
-      // Serial.println("-- access granted. credetials authenticated.");
-      //
+    if ((strncmp(cleartext, credentials, strlen(credentials)-1 )) == 0) {
+      Serial.println("-- access granted. credetials authenticated.");
       // -----------------------------------------------------------------------------------------------------------------------------------------
 
       // if credentials then seperate credentials from the rest of the payload message and parse for commands
       memset(message, 0, 56);
       strncpy(message, (char*)cleartext + strlen(credentials), strlen((char*)cleartext) - strlen(credentials));
-      // Serial.print("-- message: "); Serial.println(message);
+      Serial.print("-- message: "); Serial.println(message);
 
       // impulse
       if (strcmp( message, "IMP") == 0) {
@@ -218,11 +213,12 @@ void loop() {
       }
 
       else {
-        // Serial.println("-- unknown message ignored.");
+        Serial.println("-- unknown message ignored.");
       }
     }
     else {
-      // Serial.println("-- access denied. unauthorized credentials.");
+      Serial.println("-- access denied. unauthorized credentials.");
       }
+  
   }
 }
