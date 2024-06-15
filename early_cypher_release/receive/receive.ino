@@ -1,4 +1,5 @@
-// Precision Geiger Counter written by Benjamin Jack Cullen
+// Rad Receiver written by Benjamin Jack Cullen
+// Collect and display sensor data received from a remote device.
 
 #include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
 #include <SPI.h>

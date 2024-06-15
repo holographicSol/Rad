@@ -1,4 +1,5 @@
-// Precision Geiger Counter written by Benjamin Jack Cullen
+// Rad Sender written by Benjamin Jack Cullen
+// Collect, display and send sensor data to a remote device.
 
 // Include the correct display library
 // For a connection via I2C using Wire include
