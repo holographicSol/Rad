@@ -91,7 +91,6 @@ struct PayloadStruct {
 };
 PayloadStruct payload;
 
-#define maxCPM_StrSize 10
 // Geiger Counter
 struct GCStruct {
   double countsArray[max_count]; // stores each impulse as timestamps
@@ -102,7 +101,7 @@ struct GCStruct {
   unsigned long precisionCounts; // stores how many elements are in counts array
   unsigned long CPM;
   unsigned long previousCPM;
-  char CPM_str[maxCPM_StrSize];
+  char CPM_str[16];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60; // maximum logging period in seconds.
   unsigned long countsIter;
@@ -318,7 +317,7 @@ void loop() {
       geigerCounter.previousCPM = geigerCounter.CPM;
       timeData.previousTimestampSecond = timeData.timestamp;
       // create the message to be broadcast
-      memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
+      memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
       memset(cleartext, 0, sizeof(cleartext));
       strcat(cleartext, credentials);

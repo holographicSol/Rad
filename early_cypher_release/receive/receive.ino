@@ -73,11 +73,10 @@ struct PayloadStruct {
 };
 PayloadStruct payload;
 
-#define maxCPM_StrSize maxPayloadSize
 // Geiger Counter
 struct GCStruct {
   signed long CPM;
-  char CPM_str[maxCPM_StrSize];
+  char CPM_str[16];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
 };
 GCStruct geigerCounter;
@@ -197,8 +196,8 @@ void loop() {
       else if (strncmp( messageCommand, "CPM", 3) == 0) {
         memset(messageValue, 0, sizeof(messageValue));
         strncpy(messageValue, messageCommand + 3, strlen(messageCommand) - 3);
-        memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
-        memcpy(geigerCounter.CPM_str, messageValue, maxCPM_StrSize);
+        memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
+        memcpy(geigerCounter.CPM_str, messageValue, sizeof(geigerCounter.CPM_str));
         geigerCounter.CPM = atoi(geigerCounter.CPM_str);
         geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
       }
