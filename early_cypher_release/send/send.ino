@@ -255,6 +255,11 @@ void cipherSend() {
   // ----------------------------------------------------------------------------------------------------------------------
   // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
   radio.write(&payload, sizeof(payload));
+
+  delay(1000);
+
+  // uncomment to test replay attack
+  // radio.write(&payload, sizeof(payload));
 }
 
 void loop() {
