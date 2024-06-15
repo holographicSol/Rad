@@ -187,7 +187,7 @@ void loop() {
     // Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
     // Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
     //
-    // does decyphered text have correct credentials?
+    // now check for correct credentials
     if (strncmp( (char*)cleartext, credentials, strlen(credentials)-1 ) == 0) {
       // Serial.println("-- access granted. credetials authenticated.");
       //
