@@ -170,10 +170,12 @@ void loop() {
     uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
     radio.read(&payload, bytes); // fetch payload from FIFO
 
-    // -------------------------------------------------------------------------------------------------------------------------------------
-    // this block allows us to try and filter out unwanted/malicious traffic from manipulating values/functions on this receiver device
+    // -----------------------------------------------------------------------------------------------------------------------------------------
+    // decryption. try to ensure that values received are the values we sent to ourselves by filtering out unwanted traffic.
+    //
     // Serial.println("---------------------------------------------------------------------------");
-    // Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);       
+    // Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);    
+    //   
     // assume decrypt. force all incoming traffic through this before parsing the message for commands
     unsigned char base64decoded[50] = {0};
     base64_decode((char*)base64decoded, (char*)payload.message, 32);
@@ -181,11 +183,12 @@ void loop() {
     uint16_t decLen = decrypt_to_cleartext(payload.message, strlen((char*)payload.message), enc_iv);
     // Serial.print("Decrypted cleartext of length: "); Serial.println(decLen);
     // Serial.print("Decrypted cleartext: "); Serial.println((char*)cleartext);
-    // -------------------------------------------------------------------------------------------------------------------------------------
-
+    //
     // does decyphered text have correct credentials?
     if (strncmp( (char*)cleartext, credentials, strlen(credentials)-1 ) == 0) {
       // Serial.println("-- access granted. credetials authenticated.");
+      //
+      // -----------------------------------------------------------------------------------------------------------------------------------------
 
       // if so then seperate credentials from the rest of the payload message and parse for commands
       memset(message, 0, 56);
