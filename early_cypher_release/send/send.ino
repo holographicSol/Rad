@@ -160,12 +160,8 @@ void tubeImpulseISR() {
   geigerCounter.impulse = true;
   if (geigerCounter.countsIter < max_count) {geigerCounter.countsIter++;}
   else {geigerCounter.countsIter=0;}
-
-  // add current timestamp (per loop) to timestamps in array
+  // add timestamp (per loop) to timestamps in array
   geigerCounter.countsArray[geigerCounter.countsIter] = timeData.timestamp;
-
-  // compare current (unique) timestamp to timestamps in array
-  // geigerCounter.countsArray[geigerCounter.countsIter] = interCurrentTime();
 }
 
 void BGTubeImpulseISR() {
@@ -283,8 +279,6 @@ void loop() {
     
       // compare current timestamp (per loop) to timestamps in array
       if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-      // compare current (unique) timestamp to timestamps in array
-      // if (((interCurrentTime() - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
         geigerCounter.countsArray[i] = 0;
         
         }
