@@ -239,6 +239,5 @@ void loop() {
     else {
       Serial.println("[DENIED]");
       }
-  
   }
 }
