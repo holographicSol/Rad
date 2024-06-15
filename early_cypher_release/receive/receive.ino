@@ -165,23 +165,23 @@ void loop() {
     // function and if the message is not garbage afterwards AND it somehow has the correct creds then further scrutinize the message for commands. 
     //
     Serial.println("---------------------------------------------------------------------------");
-    Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);    
+    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
     // assume deccrypt
     decrypted = decrypt(payload.message, dec_iv);
-    Serial.print("Decrypted Result: "); Serial.println(decrypted);
+    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(decrypted); 
     // convert to char array
     memset(cleartext, 0, sizeof(cleartext));
     decrypted.toCharArray(cleartext, sizeof(cleartext));
 
     // now check for correct credentials
     if ((strncmp(cleartext, credentials, strlen(credentials)-1 )) == 0) {
-      Serial.println("-- access granted. credetials authenticated.");
+      Serial.println("[ACCEPTED]");
       // -----------------------------------------------------------------------------------------------------------------------------------------
 
       // if credentials then seperate credentials from the rest of the payload message and parse for commands
       memset(messageCommand, 0, sizeof(messageCommand));
       strncpy(messageCommand, (char*)cleartext + strlen(credentials), strlen((char*)cleartext) - strlen(credentials));
-      Serial.print("-- messageCommand: "); Serial.println(messageCommand);
+      Serial.print("[COMMAND]"); Serial.println(messageCommand);
 
       // impulse
       if (strncmp( messageCommand, "IMP", 3) == 0) {
@@ -205,7 +205,7 @@ void loop() {
 
     }
     else {
-      Serial.println("-- access denied. unauthorized credentials.");
+      Serial.println("[DENIED]");
       }
   
   }

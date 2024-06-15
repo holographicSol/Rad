@@ -234,19 +234,17 @@ void setup() {
 void cipherSend() {
   // ----------------------------------------------------------------------------------------------------------------------
   Serial.println("---------------------------------------------------------------------------");
-  Serial.print("cleartext: "); Serial.println(cleartext);
+  payload.payloadID++;
+  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(cleartext);
   encrypted = encrypt(cleartext, enc_iv);
   sprintf(ciphertext, "%s", encrypted.c_str());
-  Serial.print("Encrypted Result: "); Serial.println(encrypted);
   // ----------------------------------------------------------------------------------------------------------------------
   memset(payload.message, 0, maxPayloadSize);
   memcpy(payload.message, ciphertext, sizeof(ciphertext));
-  payload.payloadID++;
-  Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);
+  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message);
   // ----------------------------------------------------------------------------------------------------------------------
   // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
   radio.write(&payload, sizeof(payload));
-
   // uncomment to test immediate replay attack
   // delay(1000);
   // radio.write(&payload, sizeof(payload));
