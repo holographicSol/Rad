@@ -1,19 +1,17 @@
 // Rad Sender written by Benjamin Jack Cullen
 // Collect, display and send sensor data to a remote device.
 
-// Include the correct display library
-// For a connection via I2C using Wire include
-#include <Wire.h> // Only needed for Arduino 1.6.5 and earlier
-#include <SSD1306Wire.h> // legacy include: `#include "SSD1306.h"`
-#include <math.h>
 #include <stdio.h>
-#include <Arduino.h>
-#include <SPI.h>
-#include <HardwareSerial.h>
-#include <printf.h>
-#include <RF24.h>
-#include <OLEDDisplayUi.h>
 #include <stdlib.h>
+#include <printf.h>
+#include <math.h>
+#include <SPI.h>
+#include <Arduino.h>
+#include <Wire.h>
+#include <RF24.h>
+#include <SSD1306Wire.h>
+#include <OLEDDisplayUi.h>
+
 
 // ----------------------------------------------------------------------------------------------------------------------
 #include "AESLib.h"

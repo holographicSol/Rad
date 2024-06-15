@@ -1,11 +1,11 @@
 // Rad Receiver written by Benjamin Jack Cullen
 // Collect and display sensor data received from a remote device.
 
-#include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
+#include <printf.h>
 #include <SPI.h>
-#include "printf.h"
-#include "RF24.h"
-#include "OLEDDisplayUi.h"
+#include <RF24.h>
+#include <SSD1306Wire.h>
+#include <OLEDDisplayUi.h>
 
 // ----------------------------------------------------------------------------------------------------------------------
 #include "AESLib.h"
