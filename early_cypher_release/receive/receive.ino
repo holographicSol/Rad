@@ -181,7 +181,7 @@ void loop() {
       // if credentials then seperate credentials from the rest of the payload message and parse for commands
       memset(messageCommand, 0, sizeof(messageCommand));
       strncpy(messageCommand, (char*)cleartext + strlen(credentials), strlen((char*)cleartext) - strlen(credentials));
-      Serial.print("[COMMAND]"); Serial.println(messageCommand);
+      Serial.print("[COMMAND] "); Serial.println(messageCommand);
 
       // impulse
       if (strncmp( messageCommand, "IMP", 3) == 0) {
