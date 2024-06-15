@@ -219,6 +219,7 @@ void loop() {
       }
     }
     else {
+      // else we turned plain text or cipher text to garbage we will ignore.
       // Serial.println("-- access denied. unauthorized credentials.");
       }
   }
