@@ -163,11 +163,6 @@ void tubeImpulseISR() {
   geigerCounter.countsArray[geigerCounter.countsIter] = timeData.timestamp;
 }
 
-void BGTubeImpulseISR() {
-  geigerCounter.counts++;
-  geigerCounter.impulse = true;
-}
-
 void setup() {
 
   // serial
