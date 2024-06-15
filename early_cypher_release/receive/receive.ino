@@ -15,6 +15,7 @@ unsigned char cleartext[INPUT_BUFFER_LIMIT] = {0}; // THIS IS INPUT BUFFER (FOR 
 unsigned char ciphertext[2*INPUT_BUFFER_LIMIT] = {0}; // THIS IS OUTPUT BUFFER (FOR BASE64-ENCODED ENCRYPTED DATA)
 char credentials[18];
 char message[56];
+char messageValue[32];
 // AES Encryption Key (CHANGME)
 byte aes_key[] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C };
 // General initialization vector (CHANGME) (you must use your own IV's in production for full security!!!)
@@ -209,10 +210,9 @@ void loop() {
 
       // cpm
       else if (strncmp( message, "CPM", 3) == 0) {
-        char var[32];
-        strncpy(var, message + 3, strlen(message) - 3);
+        strncpy(messageValue, message + 3, strlen(message) - 3);
         memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
-        memcpy(geigerCounter.CPM_str, var, maxCPM_StrSize);
+        memcpy(geigerCounter.CPM_str, messageValue, maxCPM_StrSize);
         geigerCounter.CPM = atoi(geigerCounter.CPM_str);
         geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
         // Serial.print("CPM: "); Serial.println(chanbuf);
