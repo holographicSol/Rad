@@ -207,36 +207,33 @@ void cipherSend() {
 
 void setup() {
 
-  // serial
+  // ------------------------------------------------------------
+
+  // setup serial
   Serial.begin(115200);
 
-  // display
+  // ------------------------------------------------------------
+
+  // setup display
   display.init();
-  display.flipScreenVertically();
   ui.setTargetFPS(60);
+  ui.disableAllIndicators();
   ui.setFrames(frames, frameCount);
+  display.flipScreenVertically();
   display.setContrast(255);
   display.setFont(ArialMT_Plain_10);
   display.cls();
   display.println("starting..");
-  ui.disableAllIndicators();
 
-  // system
-  Serial.print("XTAL Crystal Frequency: ");
-  Serial.print(getXtalFrequencyMhz());
-  Serial.println(" MHz");
-  Serial.print("CPU Frequency: ");
-  Serial.print(getCpuFrequencyMhz());
-  Serial.println(" MHz");
-  Serial.print("APB Bus Frequency: ");
-  Serial.print(getApbFrequency());
-  Serial.println(" Hz");
+  // ------------------------------------------------------------
 
-  // aes
+  // setup aes
   aes_init();
   strcpy(aes.credentials, "user:pass:");
 
-  // radio
+  // ------------------------------------------------------------
+
+  // setup radio
   if (!radio.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
     while (1) {}
@@ -246,17 +243,19 @@ void setup() {
   radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
   radio.openWritingPipe(address[0]); // always uses pipe 0
   radio.openReadingPipe(1, address[0]); // using pipe 1
-  radio.stopListening();
-  // configure the trancievers identically and be sure to stay legal. legal max typically 2.421 GHz in public places 
-  radio.setChannel(124); // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz. ch21 = 2.421 GHz
-  radio.setDataRate(RF24_2MBPS); // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
+  radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
+  radio.setDataRate(RF24_2MBPS);  // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
   radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
-  // radio.setRetries(250, 3); // uncomment this line to reduce retry time and retry attempts.
   Serial.println("Channel:  " + String(radio.getChannel()));
   Serial.println("Data Rate:" + String(radio.getDataRate()));
   Serial.println("PA Level: " + String(radio.getPALevel()));
 
-  attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
+  // ------------------------------------------------------------
+
+  // setup interrupts
+  attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING);
+
+  // ------------------------------------------------------------
 }
 
 // ----------------------------------------------------------------------------------------------------------------------
