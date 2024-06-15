@@ -11,43 +11,44 @@
 #include <RF24.h>
 #include <SSD1306Wire.h>
 #include <OLEDDisplayUi.h>
-
+#include <AESLib.h>
 
 // ----------------------------------------------------------------------------------------------------------------------
-#include "AESLib.h"
 AESLib aesLib;
 
-char cleartext[256];
-char ciphertext[512];
-char credentials[16];
 char messageCommand[16];
 char messageValue[16];
-int msgLen;
 
-String encrypted;
-String decrypted;
-
-byte aes_key[] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
-byte aes_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
-byte enc_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-byte dec_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+struct AESStruct {
+  byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
+  byte aes_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
+  byte enc_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  byte dec_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  char cleartext[256];
+  char ciphertext[512];
+  char credentials[16];
+  String encrypted;
+  String decrypted;
+  int msgLen;
+};
+AESStruct aes;
 
 void aes_init() {
-  aesLib.gen_iv(aes_iv);
+  aesLib.gen_iv(aes.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
 }
 
 String encrypt(char * msg, byte iv[]) {
-  msgLen = strlen(msg);
-  char encrypted[2 * msgLen];
-  aesLib.encrypt64((byte*)msg, msgLen, encrypted, aes_key, sizeof(aes_key), iv);
+  aes.msgLen = strlen(msg);
+  char encrypted[2 * aes.msgLen];
+  aesLib.encrypt64((byte*)msg, aes.msgLen, encrypted, aes.aes_key, sizeof(aes.aes_key), iv);
   return String(encrypted);
 }
 
 String decrypt(char * msg, byte iv[]) {
-  msgLen = strlen(msg);
-  char decrypted[msgLen]; // half may be enough
-  aesLib.decrypt64(msg, msgLen, (byte*)decrypted, aes_key, sizeof(aes_key), iv);
+  aes.msgLen = strlen(msg);
+  char decrypted[aes.msgLen]; // half may be enough
+  aesLib.decrypt64(msg, aes.msgLen, (byte*)decrypted, aes.aes_key, sizeof(aes.aes_key), iv);
   return String(decrypted);
 }
 // ----------------------------------------------------------------------------------------------------------------------
@@ -205,7 +206,7 @@ void setup() {
   Serial.println(" Hz");
 
   // default credentials
-  strcpy(credentials, "user:pass:");
+  strcpy(aes.credentials, "user:pass:");
 
   // radio
   if (!radio.begin()) {
@@ -234,12 +235,12 @@ void cipherSend() {
   // ----------------------------------------------------------------------------------------------------------------------
   Serial.println("---------------------------------------------------------------------------");
   payload.payloadID++;
-  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(cleartext);
-  encrypted = encrypt(cleartext, enc_iv);
-  sprintf(ciphertext, "%s", encrypted.c_str());
+  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
+  aes.encrypted = encrypt(aes.cleartext, aes.enc_iv);
+  sprintf(aes.ciphertext, "%s", aes.encrypted.c_str());
   // ----------------------------------------------------------------------------------------------------------------------
   memset(payload.message, 0, maxPayloadSize);
-  memcpy(payload.message, ciphertext, sizeof(ciphertext));
+  memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message);
   // ----------------------------------------------------------------------------------------------------------------------
   // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
@@ -263,9 +264,9 @@ void loop() {
     geigerCounter.impulse = false;
     if (broadcast == true) {
       // create the message to be broadcast
-      memset(cleartext, 0, sizeof(cleartext));
-      strcat(cleartext, credentials);
-      strcat(cleartext, "IMP");
+      memset(aes.cleartext, 0, sizeof(aes.cleartext));
+      strcat(aes.cleartext, aes.credentials);
+      strcat(aes.cleartext, "IMP");
       cipherSend();
     }
   }
@@ -318,10 +319,10 @@ void loop() {
       // create the message to be broadcast
       memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
-      memset(cleartext, 0, sizeof(cleartext));
-      strcat(cleartext, credentials);
-      strcat(cleartext, "CPM");
-      strcat(cleartext, geigerCounter.CPM_str);
+      memset(aes.cleartext, 0, sizeof(aes.cleartext));
+      strcat(aes.cleartext, aes.credentials);
+      strcat(aes.cleartext, "CPM");
+      strcat(aes.cleartext, geigerCounter.CPM_str);
       cipherSend();
     }
   }

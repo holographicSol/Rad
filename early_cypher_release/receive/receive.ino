@@ -6,42 +6,44 @@
 #include <RF24.h>
 #include <SSD1306Wire.h>
 #include <OLEDDisplayUi.h>
+#include <AESLib.h>
 
 // ----------------------------------------------------------------------------------------------------------------------
-#include "AESLib.h"
 AESLib aesLib;
 
-char cleartext[256];
-char ciphertext[512];
-char credentials[16];
 char messageCommand[16];
 char messageValue[16];
-int msgLen;
 
-String encrypted;
-String decrypted;
-
-byte aes_key[] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
-byte aes_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
-byte enc_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-byte dec_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+struct AESStruct {
+  byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
+  byte aes_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
+  byte enc_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  byte dec_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  char cleartext[256];
+  char ciphertext[512];
+  char credentials[16];
+  String encrypted;
+  String decrypted;
+  int msgLen;
+};
+AESStruct aes;
 
 void aes_init() {
-  aesLib.gen_iv(aes_iv);
+  aesLib.gen_iv(aes.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
 }
 
 String encrypt(char * msg, byte iv[]) {
-  msgLen = strlen(msg);
-  char encrypted[2 * msgLen];
-  aesLib.encrypt64((byte*)msg, msgLen, encrypted, aes_key, sizeof(aes_key), iv);
+  aes.msgLen = strlen(msg);
+  char encrypted[2 * aes.msgLen];
+  aesLib.encrypt64((byte*)msg, aes.msgLen, encrypted, aes.aes_key, sizeof(aes.aes_key), iv);
   return String(encrypted);
 }
 
 String decrypt(char * msg, byte iv[]) {
-  msgLen = strlen(msg);
-  char decrypted[msgLen]; // half may be enough
-  aesLib.decrypt64(msg, msgLen, (byte*)decrypted, aes_key, sizeof(aes_key), iv);
+  aes.msgLen = strlen(msg);
+  char decrypted[aes.msgLen]; // half may be enough
+  aesLib.decrypt64(msg, aes.msgLen, (byte*)decrypted, aes.aes_key, sizeof(aes.aes_key), iv);
   return String(decrypted);
 }
 // ----------------------------------------------------------------------------------------------------------------------
@@ -122,7 +124,7 @@ void setup() {
 
   // default credentials
   aes_init();
-  strcpy(credentials, "user:pass:");
+  strcpy(aes.credentials, "user:pass:");
 
   // radio
   if (!radio.begin()) {
@@ -168,19 +170,19 @@ void loop() {
     Serial.println("---------------------------------------------------------------------------");
     Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
     // assume deccrypt
-    decrypted = decrypt(payload.message, dec_iv);
-    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(decrypted);
+    aes.decrypted = decrypt(payload.message, aes.dec_iv);
+    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.decrypted);
     // convert to char array
-    memset(cleartext, 0, sizeof(cleartext));
-    decrypted.toCharArray(cleartext, sizeof(cleartext));
+    memset(aes.cleartext, 0, sizeof(aes.cleartext));
+    aes.decrypted.toCharArray(aes.cleartext, sizeof(aes.cleartext));
     // now check for correct credentials
-    if ((strncmp(cleartext, credentials, strlen(credentials)-1 )) == 0) {
+    if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
       Serial.println("[ACCEPTED]");
       // -----------------------------------------------------------------------------------------------------------------------------------------
 
       // if credentials then seperate credentials from the rest of the payload message and parse for commands
       memset(messageCommand, 0, sizeof(messageCommand));
-      strncpy(messageCommand, cleartext + strlen(credentials), strlen(cleartext) - strlen(credentials));
+      strncpy(messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
       Serial.print("[COMMAND] "); Serial.println(messageCommand);
 
       // impulse
