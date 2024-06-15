@@ -1,7 +1,8 @@
 // Rad Sender written by Benjamin Jack Cullen
 // Collect, display and send sensor data to a remote device.
 
-// ----------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------------------
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <printf.h>
@@ -13,7 +14,9 @@
 #include <SSD1306Wire.h>
 #include <OLEDDisplayUi.h>
 #include <AESLib.h>
-// ----------------------------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 // memory limitations require counts log max.
 // on esp32 a maxcount of 100 should mean main loop time will be half the time of main loop time with max count 10240.
 // it may be preferrable to have a max count <=100 (cpm 100 considered unsafe to humans) if all you are interested in
@@ -25,12 +28,16 @@
 #define CE_PIN           25 // radio can use tx
 #define CSN_PIN          26 // radio can use rx
 #define GEIGER_PIN       27
-// ----------------------------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 RF24 radio(CE_PIN, CSN_PIN);
 SSD1306Wire display(0x3c, SDA, SCL);
 OLEDDisplayUi ui(&display);
 AESLib aesLib;
-// ----------------------------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 // on esp32 if broadcast false then precision is to approximately 40 microseconds at around 35 cpm with max_count 100.
 // on esp32 if broadcast true then precision is to approximately 700 microseconds at around 35 cpm with max_count 100.
 volatile bool broadcast = true;
@@ -41,7 +48,9 @@ uint64_t address[6] = { 0x7878787878LL,
                         0xB3B4B5B6A3LL,
                         0xB3B4B5B60FLL,
                         0xB3B4B5B605LL };
-// ----------------------------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 struct AESStruct {
   byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
   byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
@@ -71,20 +80,26 @@ String decrypt(char * msg, byte iv[]) {
   aesLib.decrypt64(msg, aes.msgLen, (byte*)decrypted, aes.aes_key, sizeof(aes.aes_key), iv);
   return String(decrypted);
 }
-// ----------------------------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 struct CommandServerStruct {
   char messageCommand[16];
   char messageValue[16];
 };
 CommandServerStruct commandserver;
-// ----------------------------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
   char message[1000];
 };
 PayloadStruct payload;
-// ----------------------------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 // Geiger Counter
 struct GCStruct {
   double countsArray[max_count]; // stores each impulse as timestamps
@@ -101,7 +116,9 @@ struct GCStruct {
   unsigned long countsIter;
 };
 GCStruct geigerCounter;
-// ----------------------------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 struct TimeStruct {
   double previousTimestamp; // a placeholder for a previous time (optionally used)
   unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
@@ -116,7 +133,9 @@ struct TimeStruct {
   double previousTimestampSecond; // a placeholder for a previous time (optionally used)
 };
 TimeStruct timeData;
-// ----------------------------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
@@ -130,9 +149,9 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
 // this array keeps function pointers to all frames are the single views that slide in
 FrameCallback frames[] = { GC_Measurements };
 int frameCount = 1;
-// ----------------------------------------------------------------------------------------------------------------------
 
-// create a timestamp
+// ----------------------------------------------------------------------------------------------------------------------------
+
 double currentTime() {
   if (timeData.subTime >= 1000) {
       timeData.subTime = 0;
@@ -147,20 +166,44 @@ double currentTime() {
   return timeData.currentSecond+timeData.subTimeDivided;
 }
 
-// create an intermediary timestamp
+// ----------------------------------------------------------------------------------------------------------------------------
+
 double interCurrentTime() {
   timeData.interTime = (micros() - timeData.mainLoopTimeStart);
   timeData.interTimeDivided = timeData.interTime / 1000000;
   return timeData.timestamp+timeData.interTimeDivided;
 }
 
-// subprocedure for capturing events from Geiger Kit
+// ----------------------------------------------------------------------------------------------------------------------------
+
 void tubeImpulseISR() {
   geigerCounter.impulse = true;
   if (geigerCounter.countsIter < max_count) {geigerCounter.countsIter++;}
   else {geigerCounter.countsIter=0;}
   geigerCounter.countsArray[geigerCounter.countsIter] = timeData.timestamp;
 }
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+void cipherSend() {
+  Serial.println("---------------------------------------------------------------------------");
+  payload.payloadID++;
+  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
+  // encrypt
+  aes.encrypted = encrypt(aes.cleartext, aes.enc_iv);
+  sprintf(aes.ciphertext, "%s", aes.encrypted.c_str());
+  // load the payload
+  memset(payload.message, 0, sizeof(payload.message));
+  memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));
+  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message);
+  // send
+  radio.write(&payload, sizeof(payload));
+  // uncomment to test immediate replay attack
+  // delay(1000);
+  // radio.write(&payload, sizeof(payload));
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
 
 void setup() {
 
@@ -216,23 +259,7 @@ void setup() {
   attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING); // define external interrupts
 }
 
-void cipherSend() {
-  Serial.println("---------------------------------------------------------------------------");
-  payload.payloadID++;
-  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
-  // encrypt
-  aes.encrypted = encrypt(aes.cleartext, aes.enc_iv);
-  sprintf(aes.ciphertext, "%s", aes.encrypted.c_str());
-  // load the payload
-  memset(payload.message, 0, sizeof(payload.message));
-  memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));
-  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message);
-  // send
-  radio.write(&payload, sizeof(payload));
-  // uncomment to test immediate replay attack
-  // delay(1000);
-  // radio.write(&payload, sizeof(payload));
-}
+// ----------------------------------------------------------------------------------------------------------------------
 
 void loop() {
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
@@ -309,4 +336,3 @@ void loop() {
   // store time taken to complete
   timeData.mainLoopTimeTaken = micros() - timeData.mainLoopTimeStart;
 }
-
