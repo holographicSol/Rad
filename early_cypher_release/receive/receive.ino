@@ -212,9 +212,6 @@ void loop() {
         geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
       }
 
-      else {
-        Serial.println("-- unknown message ignored.");
-      }
     }
     else {
       Serial.println("-- access denied. unauthorized credentials.");
