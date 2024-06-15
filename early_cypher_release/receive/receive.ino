@@ -17,6 +17,7 @@ char messageCommand[16];
 char messageValue[16];
 int msgLen;
 
+String encrypted;
 String decrypted;
 
 byte aes_key[] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
@@ -168,11 +169,10 @@ void loop() {
     Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
     // assume deccrypt
     decrypted = decrypt(payload.message, dec_iv);
-    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(decrypted); 
+    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(decrypted);
     // convert to char array
     memset(cleartext, 0, sizeof(cleartext));
     decrypted.toCharArray(cleartext, sizeof(cleartext));
-
     // now check for correct credentials
     if ((strncmp(cleartext, credentials, strlen(credentials)-1 )) == 0) {
       Serial.println("[ACCEPTED]");
@@ -180,7 +180,7 @@ void loop() {
 
       // if credentials then seperate credentials from the rest of the payload message and parse for commands
       memset(messageCommand, 0, sizeof(messageCommand));
-      strncpy(messageCommand, (char*)cleartext + strlen(credentials), strlen((char*)cleartext) - strlen(credentials));
+      strncpy(messageCommand, cleartext + strlen(credentials), strlen(cleartext) - strlen(credentials));
       Serial.print("[COMMAND] "); Serial.println(messageCommand);
 
       // impulse
