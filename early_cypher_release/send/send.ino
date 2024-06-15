@@ -14,10 +14,10 @@
 #include <AESLib.h>
 
 // ----------------------------------------------------------------------------------------------------------------------
-AESLib aesLib;
-
 char messageCommand[16];
 char messageValue[16];
+
+AESLib aesLib;
 
 struct AESStruct {
   byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
@@ -82,11 +82,10 @@ uint64_t address[6] = { 0x7878787878LL,
                         0xB3B4B5B60FLL,
                         0xB3B4B5B605LL };
 
-#define maxPayloadSize 1000
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
-  char message[maxPayloadSize];
+  char message[1000];
   // unsigned char message[2*INPUT_BUFFER_LIMIT] = {0};
 };
 PayloadStruct payload;
@@ -239,7 +238,7 @@ void cipherSend() {
   aes.encrypted = encrypt(aes.cleartext, aes.enc_iv);
   sprintf(aes.ciphertext, "%s", aes.encrypted.c_str());
   // ----------------------------------------------------------------------------------------------------------------------
-  memset(payload.message, 0, maxPayloadSize);
+  memset(payload.message, 0, sizeof(payload.message));
   memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message);
   // ----------------------------------------------------------------------------------------------------------------------

@@ -9,10 +9,10 @@
 #include <AESLib.h>
 
 // ----------------------------------------------------------------------------------------------------------------------
-AESLib aesLib;
-
 char messageCommand[16];
 char messageValue[16];
+
+AESLib aesLib;
 
 struct AESStruct {
   byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
@@ -32,7 +32,6 @@ void aes_init() {
   aesLib.gen_iv(aes.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
 }
-
 String encrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
   char encrypted[2 * aes.msgLen];
