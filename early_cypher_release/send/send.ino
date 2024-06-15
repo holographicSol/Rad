@@ -260,14 +260,27 @@ void setup() {
 
 // ----------------------------------------------------------------------------------------------------------------------
 
+bool checkImpulse() {
+}
+
+// ----------------------------------------------------------------------------------------------------------------------
+
 void loop() {
+
   // ------------------------------------------------------------
-  
+
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.mainLoopTimeStart = micros();
 
   // set current timestamp to be used this loop same millisecond+- depending on loop speed.
   timeData.timestamp = currentTime();
+  
+  // set previous time each minute
+  if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
+    Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
+    timeData.previousTimestamp = timeData.timestamp;
+    geigerCounter.warmup = false;
+  }
 
   // ------------------------------------------------------------
 
@@ -286,16 +299,6 @@ void loop() {
 
   // ------------------------------------------------------------
   
-  // set previous time each minute
-  if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
-    Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
-    timeData.previousTimestamp = timeData.timestamp;
-    geigerCounter.warmup = false; // completed 60 second warmup required for precision
-    // delay(3000);
-  }
-
-  // ------------------------------------------------------------
-  
   // step through the array and remove expired impulses by exluding them from our new array.
   geigerCounter.precisionCounts = 0;
   memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
@@ -305,7 +308,6 @@ void loop() {
       // compare current timestamp (per loop) to timestamps in array
       if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
         geigerCounter.countsArray[i] = 0;
-        
         }
       else {
         geigerCounter.precisionCounts++; // non expired counters increment the precision counter

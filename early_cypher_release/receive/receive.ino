@@ -112,19 +112,45 @@ int frameCount = 1;
 // ----------------------------------------------------------------------------------------------------------------------------
 
 void cipherReceive() {
-    Serial.println("---------------------------------------------------------------------------");
-    // read the payload into payload struct
-    uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
-    memset(payload.message, 0, sizeof(payload.message));
-    radio.read(&payload, bytes); // fetch payload from FIFO
-    // display raw payload
-    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
-    // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
-    aes.decrypted = decrypt(payload.message, aes.dec_iv);
-    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.decrypted);
-    // convert to char array
-    memset(aes.cleartext, 0, sizeof(aes.cleartext));
-    aes.decrypted.toCharArray(aes.cleartext, sizeof(aes.cleartext));
+  Serial.println("---------------------------------------------------------------------------");
+  // read the payload into payload struct
+  uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
+  memset(payload.message, 0, sizeof(payload.message));
+  radio.read(&payload, bytes); // fetch payload from FIFO
+  // display raw payload
+  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
+  // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
+  aes.decrypted = decrypt(payload.message, aes.dec_iv);
+  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.decrypted);
+  // convert to char array
+  memset(aes.cleartext, 0, sizeof(aes.cleartext));
+  aes.decrypted.toCharArray(aes.cleartext, sizeof(aes.cleartext));
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+void processCommand() {
+  // compare message command to known commands.
+
+  // impulse
+  if (strncmp( commandserver.messageCommand, "IMP", 3) == 0) {
+    digitalWrite(speaker_0, HIGH);
+    digitalWrite(speaker_0, HIGH);
+    digitalWrite(led_red, HIGH);
+    delay(3);
+    digitalWrite(led_red, LOW);
+    digitalWrite(speaker_0, LOW);
+  }
+
+  // cpm
+  else if (strncmp( commandserver.messageCommand, "CPM", 3) == 0) {
+    memset(commandserver.messageValue, 0, sizeof(commandserver.messageValue));
+    strncpy(commandserver.messageValue, commandserver.messageCommand + 3, strlen(commandserver.messageCommand) - 3);
+    memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
+    memcpy(geigerCounter.CPM_str, commandserver.messageValue, sizeof(geigerCounter.CPM_str));
+    geigerCounter.CPM = atoi(geigerCounter.CPM_str);
+    geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
+  }
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -208,30 +234,13 @@ void loop() {
     if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
       Serial.println("[ACCEPTED]");
 
-      // if credentials then seperate credentials from the rest of the payload message and parse for commands
+      // seperate credentials from the rest of the payload message and parse for commands
       memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
       strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
       Serial.print("[COMMAND] "); Serial.println(commandserver.messageCommand);
 
-      // impulse
-      if (strncmp( commandserver.messageCommand, "IMP", 3) == 0) {
-        digitalWrite(speaker_0, HIGH);
-        digitalWrite(speaker_0, HIGH);
-        digitalWrite(led_red, HIGH);
-        delay(3);
-        digitalWrite(led_red, LOW);
-        digitalWrite(speaker_0, LOW);
-      }
-
-      // cpm
-      else if (strncmp( commandserver.messageCommand, "CPM", 3) == 0) {
-        memset(commandserver.messageValue, 0, sizeof(commandserver.messageValue));
-        strncpy(commandserver.messageValue, commandserver.messageCommand + 3, strlen(commandserver.messageCommand) - 3);
-        memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
-        memcpy(geigerCounter.CPM_str, commandserver.messageValue, sizeof(geigerCounter.CPM_str));
-        geigerCounter.CPM = atoi(geigerCounter.CPM_str);
-        geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
-      }
+      // check remaining message for a known command
+      processCommand();
 
       // ------------------------------------------------------------------------------------------------------------------------
 
