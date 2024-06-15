@@ -70,7 +70,8 @@ byte enc_iv_from[N_BLOCK] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0x
 // precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase
 // max count from 10240 providing you beleive there is the memory and performance available on the MCU your building for.
 #define max_count       100
-#define warning_level_0 99 // warn at this cpm 
+#define warning_level_0 99  // warn at this cpm
+#define syncInterval    1   // how often transmit values outside of values being transmitted if values change
 
 #define CE_PIN     25 // radio can use tx
 #define CSN_PIN    26 // radio can use rx
@@ -130,6 +131,7 @@ struct TimeStruct {
   unsigned long currentSecond;
   double timestamp;
   double interTime;
+  double previousTimestampSecond; // a placeholder for a previous time (optionally used)
 };
 TimeStruct timeData;
 
@@ -340,18 +342,19 @@ void loop() {
     // todo: broadcast efficiently by only transmitting cpm when cpm changes and by providing a periodic
     // transmission for syncronization between devices accross dropped packets
     //
-    // if (geigerCounter.CPM != geigerCounter.previousCPM) {
-    //   geigerCounter.previousCPM = geigerCounter.CPM;
-
-    // create the message to be broadcast
-    memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
-    dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
-    memset(message, 0, 56);
-    strcat(message, credentials);
-    strcat(message, "CPM");
-    strcat(message, geigerCounter.CPM_str);
-    cipherSend();
-  // }
+    if ((geigerCounter.CPM != geigerCounter.previousCPM) || ( timeData.timestamp > (timeData.previousTimestampSecond+syncInterval) )) {
+      // Serial.println("sync");
+      geigerCounter.previousCPM = geigerCounter.CPM;
+      timeData.previousTimestampSecond = timeData.timestamp;
+      // create the message to be broadcast
+      memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
+      dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
+      memset(message, 0, 56);
+      strcat(message, credentials);
+      strcat(message, "CPM");
+      strcat(message, geigerCounter.CPM_str);
+      cipherSend();
+    }
   }
 
   // store time taken to complete
