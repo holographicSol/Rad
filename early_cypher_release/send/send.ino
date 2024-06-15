@@ -339,9 +339,7 @@ void loop() {
 
   if (broadcast == true) {
 
-    // todo: broadcast efficiently by only transmitting cpm when cpm changes and by providing a periodic
-    // transmission for syncronization between devices accross dropped packets
-    //
+    // transmit cpm if cpm has changed or if cpm sync interval has passed
     if ((geigerCounter.CPM != geigerCounter.previousCPM) || ( timeData.timestamp > (timeData.previousTimestampSyncCPM+syncIntervalCPM) )) {
       geigerCounter.previousCPM = geigerCounter.CPM;
       timeData.previousTimestampSyncCPM = timeData.timestamp;
