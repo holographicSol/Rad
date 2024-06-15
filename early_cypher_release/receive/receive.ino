@@ -10,45 +10,36 @@
 #include "AESLib.h"
 AESLib aesLib;
 
-String plaintext = "12345678;";
 char cleartext[256];
 char ciphertext[512];
-char message[200] = {0};
 char credentials[16];
-char messageValue[32];
-// AES Encryption Key
-byte aes_key[] = { 0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30 };
+char messageCommand[16];
+char messageValue[16];
+int msgLen;
 
-// General initialization vector (use your own)
-byte aes_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-byte enc_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to, reqires always fresh copy.
-byte dec_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to, reqires always fresh copy.
-// Generate IV (once)
+String decrypted;
+
+byte aes_key[] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
+byte aes_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
+byte enc_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+byte dec_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+
 void aes_init() {
   aesLib.gen_iv(aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
-  // encrypt("AAAAAAAAAA", aes_iv); // workaround for incorrect B64 functionality on first run... initing b64 is not enough
 }
 
 String encrypt(char * msg, byte iv[]) {
-  unsigned long ms = micros();
-  int msgLen = strlen(msg);
+  msgLen = strlen(msg);
   char encrypted[2 * msgLen];
   aesLib.encrypt64((byte*)msg, msgLen, encrypted, aes_key, sizeof(aes_key), iv);
-  Serial.print("Encryption took: ");
-  Serial.print(micros() - ms);
-  Serial.println("us");
   return String(encrypted);
 }
 
 String decrypt(char * msg, byte iv[]) {
-  unsigned long ms = micros();
-  int msgLen = strlen(msg);
+  msgLen = strlen(msg);
   char decrypted[msgLen]; // half may be enough
   aesLib.decrypt64(msg, msgLen, (byte*)decrypted, aes_key, sizeof(aes_key), iv);
-  Serial.print("Decryption [2] took: ");
-  Serial.print(micros() - ms);
-  Serial.println("us");
   return String(decrypted);
 }
 // ----------------------------------------------------------------------------------------------------------------------
@@ -72,7 +63,6 @@ uint64_t address[6] = { 0x7878787878LL,
                         0xB3B4B5B60FLL,
                         0xB3B4B5B605LL };
 
-unsigned long previousPayloadID;
 #define maxPayloadSize 1000
 struct PayloadStruct {
   unsigned long nodeID;
@@ -163,11 +153,10 @@ void loop() {
   // get payload
   uint8_t pipe;
   if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
-    memset(payload.message, 0, sizeof(payload.message));
-    memset(cleartext, 0, sizeof(cleartext));
 
     // read the payload into payload struct
     uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
+    memset(payload.message, 0, sizeof(payload.message));
     radio.read(&payload, bytes); // fetch payload from FIFO
 
     // -----------------------------------------------------------------------------------------------------------------------------------------
@@ -177,9 +166,11 @@ void loop() {
     //
     Serial.println("---------------------------------------------------------------------------");
     Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);    
-    Serial.print("DECRYPTION (char*): "); Serial.println(payload.message);
-    String decrypted = decrypt(payload.message, dec_iv);
+    // assume deccrypt
+    decrypted = decrypt(payload.message, dec_iv);
     Serial.print("Decrypted Result: "); Serial.println(decrypted);
+    // convert to char array
+    memset(cleartext, 0, sizeof(cleartext));
     decrypted.toCharArray(cleartext, sizeof(cleartext));
 
     // now check for correct credentials
@@ -188,12 +179,12 @@ void loop() {
       // -----------------------------------------------------------------------------------------------------------------------------------------
 
       // if credentials then seperate credentials from the rest of the payload message and parse for commands
-      memset(message, 0, 56);
-      strncpy(message, (char*)cleartext + strlen(credentials), strlen((char*)cleartext) - strlen(credentials));
-      Serial.print("-- message: "); Serial.println(message);
+      memset(messageCommand, 0, sizeof(messageCommand));
+      strncpy(messageCommand, (char*)cleartext + strlen(credentials), strlen((char*)cleartext) - strlen(credentials));
+      Serial.print("-- messageCommand: "); Serial.println(messageCommand);
 
       // impulse
-      if (strncmp( message, "IMP", 3) == 0) {
+      if (strncmp( messageCommand, "IMP", 3) == 0) {
         digitalWrite(speaker_0, HIGH);
         digitalWrite(speaker_0, HIGH);
         digitalWrite(led_red, HIGH);
@@ -203,9 +194,9 @@ void loop() {
       }
 
       // cpm
-      else if (strncmp( message, "CPM", 3) == 0) {
+      else if (strncmp( messageCommand, "CPM", 3) == 0) {
         memset(messageValue, 0, sizeof(messageValue));
-        strncpy(messageValue, message + 3, strlen(message) - 3);
+        strncpy(messageValue, messageCommand + 3, strlen(messageCommand) - 3);
         memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
         memcpy(geigerCounter.CPM_str, messageValue, maxCPM_StrSize);
         geigerCounter.CPM = atoi(geigerCounter.CPM_str);

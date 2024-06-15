@@ -18,45 +18,36 @@
 #include "AESLib.h"
 AESLib aesLib;
 
-String plaintext = "12345678;";
 char cleartext[256];
 char ciphertext[512];
-char message[200] = {0};
-char credentials[18];
-char messageValue[32];
-// AES Encryption Key
-byte aes_key[] = { 0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30,0x30 };
+char credentials[16];
+char messageCommand[16];
+char messageValue[16];
+int msgLen;
 
-// General initialization vector (use your own)
-byte aes_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-byte enc_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to, reqires always fresh copy.
-byte dec_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to, reqires always fresh copy.
-// Generate IV (once)
+String encrypted;
+
+byte aes_key[] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
+byte aes_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
+byte enc_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+byte dec_iv[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+
 void aes_init() {
   aesLib.gen_iv(aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
-  // encrypt("AAAAAAAAAA", aes_iv); // workaround for incorrect B64 functionality on first run... initing b64 is not enough
 }
 
 String encrypt(char * msg, byte iv[]) {
-  unsigned long ms = micros();
-  int msgLen = strlen(msg);
+  msgLen = strlen(msg);
   char encrypted[2 * msgLen];
   aesLib.encrypt64((byte*)msg, msgLen, encrypted, aes_key, sizeof(aes_key), iv);
-  Serial.print("Encryption took: ");
-  Serial.print(micros() - ms);
-  Serial.println("us");
   return String(encrypted);
 }
 
 String decrypt(char * msg, byte iv[]) {
-  unsigned long ms = micros();
-  int msgLen = strlen(msg);
+  msgLen = strlen(msg);
   char decrypted[msgLen]; // half may be enough
   aesLib.decrypt64(msg, msgLen, (byte*)decrypted, aes_key, sizeof(aes_key), iv);
-  Serial.print("Decryption [2] took: ");
-  Serial.print(micros() - ms);
-  Serial.println("us");
   return String(decrypted);
 }
 // ----------------------------------------------------------------------------------------------------------------------
@@ -243,8 +234,8 @@ void setup() {
 void cipherSend() {
   // ----------------------------------------------------------------------------------------------------------------------
   Serial.println("---------------------------------------------------------------------------");
-  Serial.print("ENCRYPTION (char*): "); Serial.println(message);
-  String encrypted = encrypt(message, enc_iv);
+  Serial.print("ENCRYPTION (char*): "); Serial.println(messageCommand);
+  encrypted = encrypt(messageCommand, enc_iv);
   sprintf(ciphertext, "%s", encrypted.c_str());
   Serial.print("Encrypted Result: "); Serial.println(encrypted);
   // ----------------------------------------------------------------------------------------------------------------------
@@ -256,7 +247,7 @@ void cipherSend() {
   // transmit counts seperately from CPM, so that the receiver(s) can react to counts (with leds and sound) as they happen
   radio.write(&payload, sizeof(payload));
 
-  // uncomment to test replay attack
+  // uncomment to test immediate replay attack
   // delay(1000);
   // radio.write(&payload, sizeof(payload));
 }
@@ -275,9 +266,9 @@ void loop() {
     geigerCounter.impulse = false;
     if (broadcast == true) {
       // create the message to be broadcast
-      memset(message, 0, 56);
-      strcat(message, credentials);
-      strcat(message, "IMP");
+      memset(messageCommand, 0, 16);
+      strcat(messageCommand, credentials);
+      strcat(messageCommand, "IMP");
       cipherSend();
     }
   }
@@ -330,10 +321,10 @@ void loop() {
       // create the message to be broadcast
       memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
-      memset(message, 0, 56);
-      strcat(message, credentials);
-      strcat(message, "CPM");
-      strcat(message, geigerCounter.CPM_str);
+      memset(messageCommand, 0, 16);
+      strcat(messageCommand, credentials);
+      strcat(messageCommand, "CPM");
+      strcat(messageCommand, geigerCounter.CPM_str);
       cipherSend();
     }
   }
