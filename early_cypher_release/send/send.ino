@@ -261,11 +261,15 @@ void setup() {
 // ----------------------------------------------------------------------------------------------------------------------
 
 void loop() {
+  // ------------------------------------------------------------
+  
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.mainLoopTimeStart = micros();
 
   // set current timestamp to be used this loop same millisecond+- depending on loop speed.
   timeData.timestamp = currentTime();
+
+  // ------------------------------------------------------------
 
   // check if impulse
   if (geigerCounter.impulse == true) {
@@ -279,6 +283,8 @@ void loop() {
       cipherSend();
     }
   }
+
+  // ------------------------------------------------------------
   
   // set previous time each minute
   if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
@@ -287,6 +293,8 @@ void loop() {
     geigerCounter.warmup = false; // completed 60 second warmup required for precision
     // delay(3000);
   }
+
+  // ------------------------------------------------------------
   
   // step through the array and remove expired impulses by exluding them from our new array.
   geigerCounter.precisionCounts = 0;
@@ -312,8 +320,7 @@ void loop() {
   geigerCounter.CPM = geigerCounter.precisionCounts;
   geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
 
-  // refresh ssd1306 128x64 display
-  ui.update();
+  // ------------------------------------------------------------
 
   if (broadcast == true) {
     // todo: broadcast periodically outside of value change
@@ -331,6 +338,11 @@ void loop() {
       cipherSend();
     }
   }
+
+  // ------------------------------------------------------------
+
+  // refresh ssd1306 128x64 display
+  ui.update();
 
   // store time taken to complete
   timeData.mainLoopTimeTaken = micros() - timeData.mainLoopTimeStart;
