@@ -116,9 +116,6 @@ void cipherReceive() {
   // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
   decrypt(payload.message, aes.dec_iv);
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
-  // // convert to char array
-  // memset(aes.cleartext, 0, sizeof(aes.cleartext));
-  // aes.decrypted.toCharArray(aes.cleartext, sizeof(aes.cleartext));
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
