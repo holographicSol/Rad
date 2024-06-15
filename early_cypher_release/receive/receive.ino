@@ -87,7 +87,7 @@ PayloadStruct payload;
 #define maxCPM_StrSize maxPayloadSize
 // Geiger Counter
 struct GCStruct {
-  unsigned long CPM;
+  signed long CPM;
   char CPM_str[maxCPM_StrSize];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
 };
@@ -179,7 +179,7 @@ void loop() {
     // Serial.println("---------------------------------------------------------------------------");
     // Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);    
     //   
-    // assume decrypt. force all incoming traffic through this before parsing the message for commands
+    // assume decrypt. force all incoming traffic through this before parsing the message for commands, if its not junk yet, it likely will be
     unsigned char base64decoded[50] = {0};
     base64_decode((char*)base64decoded, (char*)payload.message, 32);
     memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
@@ -202,9 +202,9 @@ void loop() {
       if (strcmp( message, "IMP") == 0) {
         digitalWrite(speaker_0, HIGH);
         digitalWrite(speaker_0, HIGH);
-        digitalWrite(led_red, HIGH); // turn the LED on (HIGH is the voltage level)
+        digitalWrite(led_red, HIGH);
         delay(3);
-        digitalWrite(led_red, LOW);  // turn the LED off by making the voltage LOW
+        digitalWrite(led_red, LOW);
         digitalWrite(speaker_0, LOW);
       }
 
@@ -219,7 +219,7 @@ void loop() {
       }
     }
     else {
-      // else we turned plain text or cipher text to garbage we will ignore.
+      // else we turned plain text or cipher text to garbage we will ignore
       // Serial.println("-- access denied. unauthorized credentials.");
       }
   }
