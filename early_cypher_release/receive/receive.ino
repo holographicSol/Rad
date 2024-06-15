@@ -111,6 +111,24 @@ int frameCount = 1;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+void cipherReceive() {
+    Serial.println("---------------------------------------------------------------------------");
+    // read the payload into payload struct
+    uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
+    memset(payload.message, 0, sizeof(payload.message));
+    radio.read(&payload, bytes); // fetch payload from FIFO
+    // display raw payload
+    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
+    // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
+    aes.decrypted = decrypt(payload.message, aes.dec_iv);
+    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.decrypted);
+    // convert to char array
+    memset(aes.cleartext, 0, sizeof(aes.cleartext));
+    aes.decrypted.toCharArray(aes.cleartext, sizeof(aes.cleartext));
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 void setup() {
 
   // ------------------------------------------------------------
@@ -181,26 +199,10 @@ void loop() {
   // get payload
   uint8_t pipe;
   if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
+  
+    cipherReceive();
 
-    // read the payload into payload struct
-    uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
-    memset(payload.message, 0, sizeof(payload.message));
-    radio.read(&payload, bytes); // fetch payload from FIFO
-
-    // -----------------------------------------------------------------------------------------------------------------------------------------
-    // decryption. we only want to display values and run functions that we are sending to ourselves from the remote sensor. we would like to
-    // have more confidence that our values are legitimate, so before doing anything with the message, first send the message through the decipher
-    // function and if the message is not garbage afterwards AND it somehow has the correct creds then further scrutinize the message for commands. 
-    //
-    Serial.println("---------------------------------------------------------------------------");
-    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
-    // assume deccrypt
-    aes.decrypted = decrypt(payload.message, aes.dec_iv);
-    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.decrypted);
-
-    // convert to char array
-    memset(aes.cleartext, 0, sizeof(aes.cleartext));
-    aes.decrypted.toCharArray(aes.cleartext, sizeof(aes.cleartext));
+    // ------------------------------------------------------------------------------------------------------------------------
 
     // now check for correct credentials
     if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
@@ -230,6 +232,8 @@ void loop() {
         geigerCounter.CPM = atoi(geigerCounter.CPM_str);
         geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
       }
+
+      // ------------------------------------------------------------------------------------------------------------------------
 
     }
     else {
