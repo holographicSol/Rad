@@ -132,7 +132,7 @@ void setup() {
   digitalWrite(led_red, LOW);
 
   // default credentials
-  strcpy(credentials, "uname:pass:");
+  strcpy(credentials, "lDeO8:!*C8:");
 
   // radio
   if (!radio.begin()) {
@@ -178,8 +178,7 @@ void loop() {
     //
     // Serial.println("---------------------------------------------------------------------------");
     // Serial.print(String("[ID ") + String(payload.payloadID) + "] "); Serial.print("message: "); Serial.println((char*)payload.message);    
-    //   
-    // assume decrypt. force all incoming traffic through this before parsing the message for commands, if its not junk yet, it likely will be
+    // 
     unsigned char base64decoded[50] = {0};
     base64_decode((char*)base64decoded, (char*)payload.message, 32);
     memcpy(enc_iv, enc_iv_from, sizeof(enc_iv_from));
@@ -193,7 +192,7 @@ void loop() {
       //
       // -----------------------------------------------------------------------------------------------------------------------------------------
 
-      // if so then seperate credentials from the rest of the payload message and parse for commands
+      // if credentials then seperate credentials from the rest of the payload message and parse for commands
       memset(message, 0, 56);
       strncpy(message, (char*)cleartext + strlen(credentials), strlen((char*)cleartext) - strlen(credentials));
       // Serial.print("-- message: "); Serial.println(message);
@@ -223,7 +222,6 @@ void loop() {
       }
     }
     else {
-      // else we turned plain text or cipher text to garbage we will ignore
       // Serial.println("-- access denied. unauthorized credentials.");
       }
   }
