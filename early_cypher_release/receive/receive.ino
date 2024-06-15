@@ -46,8 +46,6 @@ struct AESStruct {
   char cleartext[256];
   char ciphertext[512];
   char credentials[16];
-  String encrypted;
-  String decrypted;
   int msgLen;
 };
 AESStruct aes;
