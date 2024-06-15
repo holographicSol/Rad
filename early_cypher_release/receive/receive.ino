@@ -19,8 +19,9 @@ OLEDDisplayUi ui ( &display );
 RF24 radio(CE_PIN, CSN_PIN);
 AESLib aesLib;
 // ----------------------------------------------------------------------------------------------------------------------
-int led_red = 32; // led 32 RED 2 BLUE 4 GREEN
+int led_red   = 32; // led 32 RED 2 BLUE 4 GREEN
 int speaker_0 = 33; // geiger counter sound
+// radio addresses
 uint64_t address[6] = { 0x7878787878LL,
                         0xB3B4B5B6F1LL,
                         0xB3B4B5B6CDLL,
@@ -30,9 +31,9 @@ uint64_t address[6] = { 0x7878787878LL,
 // ----------------------------------------------------------------------------------------------------------------------
 struct AESStruct {
   byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
-  byte aes_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
-  byte enc_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  byte dec_iv[16] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
+  byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
   char cleartext[256];
   char ciphertext[512];
   char credentials[16];
@@ -117,7 +118,7 @@ void setup() {
   digitalWrite(speaker_0, LOW);
   digitalWrite(led_red, LOW);
 
-  // default credentials
+  // aes
   aes_init();
   strcpy(aes.credentials, "user:pass:");
 
