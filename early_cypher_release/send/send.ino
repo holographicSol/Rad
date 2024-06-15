@@ -68,17 +68,13 @@ void aes_init() {
   aesLib.gen_iv(aes.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
 }
-String encrypt(char * msg, byte iv[]) {
+void encrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
-  char encrypted[2 * aes.msgLen];
-  aesLib.encrypt64((byte*)msg, aes.msgLen, encrypted, aes.aes_key, sizeof(aes.aes_key), iv);
-  return String(encrypted);
+  aesLib.encrypt64((byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
 }
-String decrypt(char * msg, byte iv[]) {
+void decrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
-  char decrypted[aes.msgLen]; // half may be enough
-  aesLib.decrypt64(msg, aes.msgLen, (byte*)decrypted, aes.aes_key, sizeof(aes.aes_key), iv);
-  return String(decrypted);
+  aesLib.decrypt64(msg, aes.msgLen, (byte*)aes.cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -190,8 +186,7 @@ void cipherSend() {
   payload.payloadID++;
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
   // encrypt
-  aes.encrypted = encrypt(aes.cleartext, aes.enc_iv);
-  sprintf(aes.ciphertext, "%s", aes.encrypted.c_str());
+  encrypt(aes.cleartext, aes.enc_iv);
   // load the payload
   memset(payload.message, 0, sizeof(payload.message));
   memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));

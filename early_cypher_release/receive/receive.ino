@@ -55,17 +55,13 @@ void aes_init() {
   aesLib.gen_iv(aes.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
 }
-String encrypt(char * msg, byte iv[]) {
+void encrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
-  char encrypted[2 * aes.msgLen];
-  aesLib.encrypt64((byte*)msg, aes.msgLen, encrypted, aes.aes_key, sizeof(aes.aes_key), iv);
-  return String(encrypted);
+  aesLib.encrypt64((byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
 }
-String decrypt(char * msg, byte iv[]) {
+void decrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
-  char decrypted[aes.msgLen]; // half may be enough
-  aesLib.decrypt64(msg, aes.msgLen, (byte*)decrypted, aes.aes_key, sizeof(aes.aes_key), iv);
-  return String(decrypted);
+  aesLib.decrypt64(msg, aes.msgLen, (byte*)aes.cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -120,11 +116,11 @@ void cipherReceive() {
   // display raw payload
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
   // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
-  aes.decrypted = decrypt(payload.message, aes.dec_iv);
-  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.decrypted);
-  // convert to char array
-  memset(aes.cleartext, 0, sizeof(aes.cleartext));
-  aes.decrypted.toCharArray(aes.cleartext, sizeof(aes.cleartext));
+  decrypt(payload.message, aes.dec_iv);
+  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
+  // // convert to char array
+  // memset(aes.cleartext, 0, sizeof(aes.cleartext));
+  // aes.decrypted.toCharArray(aes.cleartext, sizeof(aes.cleartext));
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
