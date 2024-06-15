@@ -215,7 +215,10 @@ void loop() {
         memcpy(geigerCounter.CPM_str, messageValue, maxCPM_StrSize);
         geigerCounter.CPM = atoi(geigerCounter.CPM_str);
         geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
-        // Serial.print("CPM: "); Serial.println(chanbuf);
+      }
+
+      else {
+        // Serial.println("-- unknown message ignored.");
       }
     }
     else {
