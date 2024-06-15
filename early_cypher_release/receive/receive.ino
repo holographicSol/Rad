@@ -210,6 +210,7 @@ void loop() {
 
       // cpm
       else if (strncmp( message, "CPM", 3) == 0) {
+        memset(messageValue, 0, sizeof(messageValue));
         strncpy(messageValue, message + 3, strlen(message) - 3);
         memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
         memcpy(geigerCounter.CPM_str, messageValue, maxCPM_StrSize);

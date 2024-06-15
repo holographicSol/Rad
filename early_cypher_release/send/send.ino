@@ -25,7 +25,7 @@ char message[56];
 char credentials[18];
 // AES Encryption Key (CHANGME)
 byte aes_key[] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C };
-// General initialization vector (CHANGME) (you must use your own IV's in production for full security!!!)
+// General initialization vector (CHANGE) (you must use your own IV's in production for full security!!!)
 byte aes_iv[N_BLOCK] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
 
 // Generate IV (once)
@@ -336,19 +336,20 @@ void loop() {
   ui.update();
 
   if (broadcast == true) {
+    
     // try to broadcast efficiently by only updating cpm when necessary
-    if (geigerCounter.CPM != geigerCounter.previousCPM) {
-      geigerCounter.previousCPM = geigerCounter.CPM;
+    // if (geigerCounter.CPM != geigerCounter.previousCPM) {
+    //   geigerCounter.previousCPM = geigerCounter.CPM;
 
-      // create the message to be broadcast
-      memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
-      dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
-      memset(message, 0, 56);
-      strcat(message, credentials);
-      strcat(message, "CPM");
-      strcat(message, geigerCounter.CPM_str);
-      cipherSend();
-    }
+    // create the message to be broadcast
+    memset(geigerCounter.CPM_str, 0, maxCPM_StrSize);
+    dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
+    memset(message, 0, 56);
+    strcat(message, credentials);
+    strcat(message, "CPM");
+    strcat(message, geigerCounter.CPM_str);
+    cipherSend();
+    // }
   }
 
   // store time taken to complete
