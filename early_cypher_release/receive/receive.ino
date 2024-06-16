@@ -43,10 +43,10 @@ struct AESStruct {
   byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
   byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
   byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  char cleartext[256];
-  char ciphertext[512];
+  char cleartext[256] = {0};
+  char ciphertext[512] = {0};
   char credentials[16];
-  int msgLen;
+  uint16_t msgLen;
 };
 AESStruct aes;
 void aes_init() {
@@ -55,11 +55,16 @@ void aes_init() {
 }
 void encrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
-  aesLib.encrypt64((byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
+  memset(aes.ciphertext, 0, sizeof(aes.ciphertext));
+  aesLib.encrypt64((const byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
 }
 void decrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
-  aesLib.decrypt64(msg, aes.msgLen, (byte*)aes.cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
+  memset(aes.cleartext, 0, sizeof(aes.cleartext));
+  char tmp_cleartext[256];
+  int plain_len = aesLib.decrypt64(msg, aes.msgLen, (byte*)foo, aes.aes_key, sizeof(aes.aes_key), iv);
+  strncpy(aes.cleartext, tmp_cleartext, plain_len);
+
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -113,9 +118,11 @@ void cipherReceive() {
   radio.read(&payload, bytes); // fetch payload from FIFO
   // display raw payload
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
+  Serial.print("[Size Of payload.message] "); Serial.println(strlen(payload.message));
   // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
-  decrypt(payload.message, aes.dec_iv);
+  decrypt((char*)payload.message, aes.dec_iv);
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
+  Serial.print("[Size Of aes.cleartext] "); Serial.println(strlen(aes.cleartext));
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------

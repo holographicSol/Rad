@@ -56,8 +56,8 @@ struct AESStruct {
   byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
   byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
   byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  char cleartext[256];
-  char ciphertext[512];
+  char cleartext[256] = {0};
+  char ciphertext[512] = {0};
   char credentials[16];
   int msgLen;
 };
@@ -68,7 +68,7 @@ void aes_init() {
 }
 void encrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
-  aesLib.encrypt64((byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
+  aesLib.encrypt64((const byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
 }
 void decrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
@@ -183,13 +183,16 @@ void cipherSend() {
   Serial.println("---------------------------------------------------------------------------");
   payload.payloadID++;
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
+  Serial.print("[Size Of aes.cleartext] "); Serial.println(strlen(aes.cleartext));
   // encrypt
-  encrypt(aes.cleartext, aes.enc_iv);
+  encrypt((char*)aes.cleartext, aes.enc_iv);
   // load the payload
   memset(payload.message, 0, sizeof(payload.message));
   memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));
   Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message);
+  Serial.print("[Size Of aes.ciphertext] "); Serial.println(strlen(aes.ciphertext));
   // send
+  Serial.print("[Size Of payload.message] "); Serial.println(strlen(payload.message));
   radio.write(&payload, sizeof(payload));
   // uncomment to test immediate replay attack
   // delay(1000);
