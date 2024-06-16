@@ -68,11 +68,15 @@ void aes_init() {
 }
 void encrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
+  memset(aes.ciphertext, 0, sizeof(aes.ciphertext));
   aesLib.encrypt64((const byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
 }
 void decrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
-  aesLib.decrypt64(msg, aes.msgLen, (byte*)aes.cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
+  memset(aes.cleartext, 0, sizeof(aes.cleartext));
+  char tmp_cleartext[256];
+  int plain_len = aesLib.decrypt64(msg, aes.msgLen, (byte*)tmp_cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
+  strncpy(aes.cleartext, tmp_cleartext, plain_len);
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
