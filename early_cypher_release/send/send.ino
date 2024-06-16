@@ -183,7 +183,8 @@ void tubeImpulseISR() {
 
 void cipherSend() {
   Serial.println("---------------------------------------------------------------------------");
-  payload.payloadID++;
+
+  if (payload.payloadID > 1000) {payload.payloadID = 0}
 
   // display raw payload
   Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);
@@ -203,9 +204,12 @@ void cipherSend() {
   // send
   Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
   radio.write(&payload, sizeof(payload));
+  payload.payloadID++;
+  
   // uncomment to test immediate replay attack
   // delay(1000);
   // radio.write(&payload, sizeof(payload));
+  
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
