@@ -42,12 +42,7 @@ AESLib aesLib;
 // on esp32 if broadcast true then precision is to approximately 700 microseconds at around 35 cpm with max_count 100.
 volatile bool broadcast = true;
 // Radio Addresses
-uint64_t address[6] = { 0x7878787878LL,
-                        0xB3B4B5B6F1LL,
-                        0xB3B4B5B6CDLL,
-                        0xB3B4B5B6A3LL,
-                        0xB3B4B5B60FLL,
-                        0xB3B4B5B605LL };
+uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -60,10 +55,11 @@ struct AESStruct {
   char ciphertext[512] = {0};
   char credentials[16];
   char tmp_cleartext[256];
-  int plain_len;
-  int msgLen;
+  uint16_t plain_len;
+  uint16_t msgLen;
 };
 AESStruct aes;
+
 void aes_init() {
   aesLib.gen_iv(aes.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
@@ -188,17 +184,24 @@ void tubeImpulseISR() {
 void cipherSend() {
   Serial.println("---------------------------------------------------------------------------");
   payload.payloadID++;
-  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
-  Serial.print("[Size Of aes.cleartext] "); Serial.println(strlen(aes.cleartext));
-  // encrypt
+
+  // display raw payload
+  Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);
+  Serial.print("[ID]                     "); Serial.println(payload.payloadID);
+  Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
+  Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
+
+  // encrypt and load the encrypted data into the payload
   encrypt((char*)aes.cleartext, aes.enc_iv);
-  // load the payload
   memset(payload.message, 0, sizeof(payload.message));
   memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));
-  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message);
-  Serial.print("[Size Of aes.ciphertext] "); Serial.println(strlen(aes.ciphertext));
+
+  // display payload information after encryption
+  Serial.print("[payload.message]        "); Serial.println(payload.message); 
+  Serial.print("[Bytes(aes.ciphertext)]  "); Serial.println(strlen(aes.ciphertext));
+
   // send
-  Serial.print("[Size Of payload.message] "); Serial.println(strlen(payload.message));
+  Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
   radio.write(&payload, sizeof(payload));
   // uncomment to test immediate replay attack
   // delay(1000);
@@ -243,11 +246,12 @@ void setup() {
   radio.flush_rx();
   radio.flush_tx();
   radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
-  radio.openWritingPipe(address[0]); // always uses pipe 0
-  radio.openReadingPipe(1, address[0]); // using pipe 1
+  radio.openWritingPipe(address[0][0]); // always uses pipe 0
+  radio.openReadingPipe(1, address[0][1]); // using pipe 1
   radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
   radio.setDataRate(RF24_2MBPS);  // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
   radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
+  payload.nodeID = address[0][1];
   Serial.println("Channel:  " + String(radio.getChannel()));
   Serial.println("Data Rate:" + String(radio.getDataRate()));
   Serial.println("PA Level: " + String(radio.getPALevel()));

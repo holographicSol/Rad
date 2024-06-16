@@ -29,12 +29,8 @@ AESLib aesLib;
 int led_red   = 32; // led 32 RED 2 BLUE 4 GREEN
 int speaker_0 = 33; // geiger counter sound
 // radio addresses
-uint64_t address[6] = { 0x7878787878LL,
-                        0xB3B4B5B6F1LL,
-                        0xB3B4B5B6CDLL,
-                        0xB3B4B5B6A3LL,
-                        0xB3B4B5B60FLL,
-                        0xB3B4B5B605LL };
+uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
+bool nodeIDAccepted = false;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -47,10 +43,11 @@ struct AESStruct {
   char ciphertext[512] = {0};
   char credentials[16];
   char tmp_cleartext[256];
-  int plain_len;
+  uint16_t plain_len;
   uint16_t msgLen;
 };
 AESStruct aes;
+
 void aes_init() {
   aesLib.gen_iv(aes.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
@@ -114,16 +111,44 @@ void cipherReceive() {
   Serial.println("---------------------------------------------------------------------------");
   // read the payload into payload struct
   uint8_t bytes = radio.getPayloadSize();
+
+  // check payload size within limit
   if (bytes <= sizeof(payload)) {
+    
+    // read the payload into the payload struct
     memset(payload.message, 0, sizeof(payload.message));
     radio.read(&payload, bytes); // fetch payload from FIFO
+
+    // check if payload has node id and if the node id is allowed (simple version)
+    nodeIDAccepted = false;
+    for (int i = 0; i < 6; i++) {
+      if (payload.nodeID == address[0][i]) {
+        nodeIDAccepted = true;
+
+        // uncomment to debug in case changing hardcoded node ids in array
+        // Serial.print(address[0][i]); Serial.println(" PASS");
+      }
+      // uncomment to debug in case changing hardcoded node ids in array
+      // else {
+      //   Serial.print(address[0][i]); Serial.println(" FAIL");
+      // }
+    }
+
     // display raw payload
-    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
-    Serial.print("[Size Of payload.message] "); Serial.println(strlen(payload.message));
-    // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
-    decrypt((char*)payload.message, aes.dec_iv);
-    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
-    Serial.print("[Size Of aes.cleartext] "); Serial.println(strlen(aes.cleartext));
+    Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);
+    Serial.print("[ID]                     "); Serial.println(payload.payloadID);
+    Serial.print("[payload.message]        "); Serial.println(payload.message); 
+    Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
+
+    if (nodeIDAccepted == true) {
+      // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
+      decrypt((char*)payload.message, aes.dec_iv);
+    }
+
+    // display payload information after decryption
+    Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
+    Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
+    
   }
 }
 
@@ -201,12 +226,13 @@ void setup() {
   radio.flush_rx();
   radio.flush_tx();
   radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
-  radio.openWritingPipe(address[1]);     // always uses pipe 0
-  radio.openReadingPipe(1, address[0]);  // using pipe 1
+  radio.openWritingPipe(address[0][1]);     // always uses pipe 1
+  radio.openReadingPipe(1, address[0][0]);  // using pipe 0
   radio.stopListening();
   radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
   radio.setDataRate(RF24_2MBPS);  // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
   radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
+  payload.nodeID = address[0][0];
   Serial.println("Channel:  " + String(radio.getChannel()));
   Serial.println("Data Rate:" + String(radio.getDataRate()));
   Serial.println("PA Level: " + String(radio.getPALevel()));
@@ -230,23 +256,29 @@ void loop() {
 
     // ------------------------------------------------------------------------------------------------------------------------
 
-    // now check for correct credentials
-    if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
-      Serial.println("[ACCEPTED]");
+    Serial.print("[Authenticated NodeID]   "); Serial.println(nodeIDAccepted);
 
-      // seperate credentials from the rest of the payload message and parse for commands
-      memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
-      strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
-      Serial.print("[COMMAND] "); Serial.println(commandserver.messageCommand);
+    // if accepted nodeID
+    if (nodeIDAccepted == true) {
 
-      // check remaining message for a known command
-      processCommand();
+      // if accepted credentials 
+      if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
+        Serial.print("[Credentials]            "); Serial.println(nodeIDAccepted);
 
-      // ------------------------------------------------------------------------------------------------------------------------
+        // seperate credentials from the rest of the payload message and parse for commands
+        memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
+        strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
 
-    }
-    else {
-      Serial.println("[DENIED]");
+        // command parse
+        Serial.print("[Command]                "); Serial.println(commandserver.messageCommand);
+        processCommand();
+
+        // ------------------------------------------------------------------------------------------------------------------------
+
       }
+      else {
+        Serial.print("[Credentials]            no"); Serial.println(nodeIDAccepted);
+      }
+    }
   }
 }
