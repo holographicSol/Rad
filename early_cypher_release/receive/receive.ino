@@ -64,7 +64,6 @@ void decrypt(char * msg, byte iv[]) {
   char tmp_cleartext[256];
   int plain_len = aesLib.decrypt64(msg, aes.msgLen, (byte*)tmp_cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
   strncpy(aes.cleartext, tmp_cleartext, plain_len);
-
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
