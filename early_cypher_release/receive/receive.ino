@@ -157,8 +157,8 @@ void cipherReceive() {
     // display payload information after decryption
     Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
     Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
-    Serial.print("[Credentials]            "); Serial.println(nodeIDAccepted);
     Serial.print("[Authenticated NodeID]   "); Serial.println(nodeIDAccepted);
+    Serial.print("[Credentials]            "); Serial.println(nodeIDAccepted);
   }
 }
 
@@ -235,9 +235,9 @@ void setup() {
   }
   radio.flush_rx();
   radio.flush_tx();
-  radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
-  radio.openWritingPipe(address[0][1]);     // always uses pipe 1
-  radio.openReadingPipe(1, address[0][0]);  // using pipe 0
+  radio.setPayloadSize(sizeof(payload));   // 2x int datatype occupy 8 bytes
+  radio.openWritingPipe(address[0][1]);    // always uses pipe 1
+  radio.openReadingPipe(1, address[0][0]); // using pipe 0
   radio.stopListening();
   radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
   radio.setDataRate(RF24_2MBPS);  // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
