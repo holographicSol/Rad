@@ -148,7 +148,7 @@ void cipherReceive() {
       if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
         credentialsAccepted = true;
 
-        // seperate credentials from the rest of the payload message and parse for commands
+        // seperate credentials from the rest of the payload message ready for command parse
         memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
         strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
         Serial.print("[Command]                "); Serial.println(commandserver.messageCommand);
