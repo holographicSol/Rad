@@ -137,7 +137,6 @@ void cipherReceive() {
         nodeIDAccepted = true;
       }
     }
-
     // proceed if nodeID accepted
     if (nodeIDAccepted == true) {
 
