@@ -31,6 +31,7 @@ int speaker_0 = 33; // geiger counter sound
 // radio addresses
 uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
 bool nodeIDAccepted = false;
+bool credentialsAccepted = false;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -109,6 +110,11 @@ int frameCount = 1;
 
 void cipherReceive() {
   Serial.println("---------------------------------------------------------------------------");
+
+  // ensure false
+  nodeIDAccepted = false;
+  credentialsAccepted = false;
+
   // read the payload into payload struct
   uint8_t bytes = radio.getPayloadSize();
 
@@ -119,36 +125,41 @@ void cipherReceive() {
     memset(payload.message, 0, sizeof(payload.message));
     radio.read(&payload, bytes); // fetch payload from FIFO
 
-    // check if payload has node id and if the node id is allowed (simple version)
-    nodeIDAccepted = false;
-    for (int i = 0; i < 6; i++) {
-      if (payload.nodeID == address[0][i]) {
-        nodeIDAccepted = true;
-
-        // uncomment to debug in case changing hardcoded node ids in array
-        // Serial.print(address[0][i]); Serial.println(" PASS");
-      }
-      // uncomment to debug in case changing hardcoded node ids in array
-      // else {
-      //   Serial.print(address[0][i]); Serial.println(" FAIL");
-      // }
-    }
-
     // display raw payload
     Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);
     Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
     Serial.print("[payload.message]        "); Serial.println(payload.message); 
     Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
 
+    // check if payload has node id and if the node id is allowed (simple version)
+    for (int i = 0; i < 6; i++) {
+      if (payload.nodeID == address[0][i]) {
+        nodeIDAccepted = true;
+      }
+    }
+
+    // proceed if nodeID accepted
     if (nodeIDAccepted == true) {
+
       // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
       decrypt((char*)payload.message, aes.dec_iv);
+
+      // if accepted credentials 
+      if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
+        credentialsAccepted = true;
+
+        // seperate credentials from the rest of the payload message and parse for commands
+        memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
+        strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
+        Serial.print("[Command]                "); Serial.println(commandserver.messageCommand);
+      }
     }
 
     // display payload information after decryption
     Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
     Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
-    
+    Serial.print("[Credentials]            "); Serial.println(nodeIDAccepted);
+    Serial.print("[Authenticated NodeID]   "); Serial.println(nodeIDAccepted);
   }
 }
 
@@ -251,34 +262,13 @@ void loop() {
   // get payload
   uint8_t pipe;
   if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
-  
+
+    // go through 'security'
     cipherReceive();
 
-    // ------------------------------------------------------------------------------------------------------------------------
-
-    Serial.print("[Authenticated NodeID]   "); Serial.println(nodeIDAccepted);
-
-    // if accepted nodeID
-    if (nodeIDAccepted == true) {
-
-      // if accepted credentials 
-      if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
-        Serial.print("[Credentials]            "); Serial.println(nodeIDAccepted);
-
-        // seperate credentials from the rest of the payload message and parse for commands
-        memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
-        strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
-
-        // command parse
-        Serial.print("[Command]                "); Serial.println(commandserver.messageCommand);
-        processCommand();
-
-        // ------------------------------------------------------------------------------------------------------------------------
-
-      }
-      else {
-        Serial.print("[Credentials]            "); Serial.println(nodeIDAccepted);
-      }
+    // process command
+    if ((nodeIDAccepted == true) && (credentialsAccepted == true)) {
+      processCommand();
     }
   }
 }
