@@ -46,6 +46,7 @@ struct AESStruct {
   char cleartext[256] = {0};
   char ciphertext[512] = {0};
   char credentials[16];
+  char tmp_cleartext[256];
   uint16_t msgLen;
 };
 AESStruct aes;
@@ -61,7 +62,6 @@ void encrypt(char * msg, byte iv[]) {
 void decrypt(char * msg, byte iv[]) {
   aes.msgLen = strlen(msg);
   memset(aes.cleartext, 0, sizeof(aes.cleartext));
-  char tmp_cleartext[256];
   int plain_len = aesLib.decrypt64(msg, aes.msgLen, (byte*)tmp_cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
   strncpy(aes.cleartext, tmp_cleartext, plain_len);
 }

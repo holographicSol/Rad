@@ -59,6 +59,7 @@ struct AESStruct {
   char cleartext[256] = {0};
   char ciphertext[512] = {0};
   char credentials[16];
+  char tmp_cleartext[256];
   int msgLen;
 };
 AESStruct aes;
