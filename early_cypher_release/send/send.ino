@@ -183,7 +183,10 @@ void tubeImpulseISR() {
 
 void cipherSend() {
   Serial.println("---------------------------------------------------------------------------");
-  payload.payloadID++;
+
+  // keep payloadID well withing its cast
+  if (payload.payloadID > 999) {payload.payloadID = 0;}
+  else {payload.payloadID++;}
 
   // display raw payload
   Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);

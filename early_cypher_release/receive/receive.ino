@@ -158,7 +158,7 @@ void cipherReceive() {
     Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
     Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
     Serial.print("[Authenticated NodeID]   "); Serial.println(nodeIDAccepted);
-    Serial.print("[Credentials]            "); Serial.println(nodeIDAccepted);
+    Serial.print("[Credentials]            "); Serial.println(credentialsAccepted);
   }
 }
 
