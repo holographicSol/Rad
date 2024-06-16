@@ -131,7 +131,7 @@ void cipherReceive() {
     Serial.print("[payload.message]        "); Serial.println(payload.message); 
     Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
 
-    // check if payload has node id and if the node id is allowed (simple version)
+    // check if payload has node id and if the node id in whitelist
     for (int i = 0; i < 6; i++) {
       if (payload.nodeID == address[0][i]) {
         nodeIDAccepted = true;
