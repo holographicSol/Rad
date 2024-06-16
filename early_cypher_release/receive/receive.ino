@@ -112,16 +112,18 @@ int frameCount = 1;
 void cipherReceive() {
   Serial.println("---------------------------------------------------------------------------");
   // read the payload into payload struct
-  uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
-  memset(payload.message, 0, sizeof(payload.message));
-  radio.read(&payload, bytes); // fetch payload from FIFO
-  // display raw payload
-  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
-  Serial.print("[Size Of payload.message] "); Serial.println(strlen(payload.message));
-  // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
-  decrypt((char*)payload.message, aes.dec_iv);
-  Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
-  Serial.print("[Size Of aes.cleartext] "); Serial.println(strlen(aes.cleartext));
+  uint8_t bytes = radio.getPayloadSize();
+  if (bytes <= sizeof(payload)) {
+    memset(payload.message, 0, sizeof(payload.message));
+    radio.read(&payload, bytes); // fetch payload from FIFO
+    // display raw payload
+    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(payload.message); 
+    Serial.print("[Size Of payload.message] "); Serial.println(strlen(payload.message));
+    // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
+    decrypt((char*)payload.message, aes.dec_iv);
+    Serial.print("[ID] "); Serial.print(payload.payloadID); Serial.print(" [payload.message] "); Serial.println(aes.cleartext);
+    Serial.print("[Size Of aes.cleartext] "); Serial.println(strlen(aes.cleartext));
+  }
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
