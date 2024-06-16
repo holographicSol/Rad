@@ -187,7 +187,7 @@ void cipherSend() {
 
   // display raw payload
   Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);
-  Serial.print("[ID]                     "); Serial.println(payload.payloadID);
+  Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
   Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
   Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
 

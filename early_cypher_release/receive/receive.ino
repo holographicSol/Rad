@@ -136,7 +136,7 @@ void cipherReceive() {
 
     // display raw payload
     Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);
-    Serial.print("[ID]                     "); Serial.println(payload.payloadID);
+    Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
     Serial.print("[payload.message]        "); Serial.println(payload.message); 
     Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
 
