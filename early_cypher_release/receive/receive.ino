@@ -277,7 +277,7 @@ void loop() {
 
       }
       else {
-        Serial.print("[Credentials]            no"); Serial.println(nodeIDAccepted);
+        Serial.print("[Credentials]            "); Serial.println(nodeIDAccepted);
       }
     }
   }
