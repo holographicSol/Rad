@@ -28,6 +28,7 @@
 #define CE_PIN           25 // radio can use tx
 #define CSN_PIN          26 // radio can use rx
 #define GEIGER_PIN       27
+#define CIPHERBLOCKSIZE 32 // limited to 32 bytes inline with NRF24L01+ max payload bytes
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -45,49 +46,7 @@ uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-#define CIPHERBLOCKSIZE 32 // limited to 32 bytes inline with NRF24L01+ max payload bytes
-
-struct AESStruct {
-  byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
-  byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
-  byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  char cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};              // half the size of ciphertext
-  char ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
-  char fingerprint[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
-  char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
-  uint16_t plain_len;
-  uint16_t msgLen;
-};
-AESStruct aes;
-
-void aes_init() {
-  aesLib.gen_iv(aes.aes_iv);
-  aesLib.set_paddingmode((paddingMode)0);
-}
-void encrypt(char * msg, byte iv[]) {
-  aes.msgLen = strlen(msg);
-  memset(aes.ciphertext, 0, sizeof(aes.ciphertext));
-  aesLib.encrypt64((const byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
-}
-void decrypt(char * msg, byte iv[]) {
-  aes.msgLen = strlen(msg);
-  memset(aes.cleartext, 0, sizeof(aes.cleartext));
-  char tmp_cleartext[256];
-  aes.plain_len = aesLib.decrypt64(msg, aes.msgLen, (byte*)aes.tmp_cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
-  strncpy(aes.cleartext, aes.tmp_cleartext, aes.plain_len);
-}
-
-// ----------------------------------------------------------------------------------------------------------------------------
-
-struct CommandServerStruct {
-  char messageCommand[(unsigned long)(CIPHERBLOCKSIZE/2)];
-  char messageValue[(unsigned long)(CIPHERBLOCKSIZE/2)];
-};
-CommandServerStruct commandserver;
-
-// ----------------------------------------------------------------------------------------------------------------------------
-
+// a simple struct for wireless incoming/outgoing information
 struct PayloadStruct {
   unsigned long payloadID;
   char message[CIPHERBLOCKSIZE];
@@ -96,7 +55,7 @@ PayloadStruct payload;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-// Geiger Counter
+// geiger counter data
 struct GCStruct {
   double countsArray[max_count]; // stores each impulse as timestamps
   double countsArrayTemp[max_count]; // temporarily stores timestamps
@@ -142,9 +101,41 @@ void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x,
   display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
   display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
 }
-// this array keeps function pointers to all frames are the single views that slide in
-FrameCallback frames[] = { GC_Measurements };
+FrameCallback frames[] = { GC_Measurements }; // array keeps function pointers to all frames are the single views that slide in
 int frameCount = 1;
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+struct AESStruct {
+  byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
+  byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
+  byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  char cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};              // half the size of ciphertext
+  char ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
+  char fingerprint[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
+  char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
+  uint16_t plain_len;
+  uint16_t msgLen;
+};
+AESStruct aes;
+
+void aes_init() {
+  aesLib.gen_iv(aes.aes_iv);
+  aesLib.set_paddingmode((paddingMode)0);
+}
+void encrypt(char * msg, byte iv[]) {
+  aes.msgLen = strlen(msg);
+  memset(aes.ciphertext, 0, sizeof(aes.ciphertext));
+  aesLib.encrypt64((const byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
+}
+void decrypt(char * msg, byte iv[]) {
+  aes.msgLen = strlen(msg);
+  memset(aes.cleartext, 0, sizeof(aes.cleartext));
+  char tmp_cleartext[256];
+  aes.plain_len = aesLib.decrypt64(msg, aes.msgLen, (byte*)aes.tmp_cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
+  strncpy(aes.cleartext, aes.tmp_cleartext, aes.plain_len);
+}
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
