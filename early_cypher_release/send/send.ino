@@ -241,8 +241,18 @@ void setup() {
   // this is just a tag to let us know if we decrypted anything.
   // RF24 payload limited to 32bytes while encryption doubles
   // the size of our payload.message. this means we have a little
-  // under 16 bytes for our unencrypted payload message plus an
-  // extra 2 or 3 bytes for node iD and payload iD.
+  // under 15 bytes for our unencrypted payload message plus an
+  // extra byte or so for out payloadID.
+  // payload chunking is always an option but it will be slower.
+  // otherwise its a trade off between longer in message creds or
+  // more meaningful data being transmitted.
+  // 32 byte limitation:
+  //                1           +          3           +         12
+  // example: 1byte (payloadID) + Nbytes (credentials) + remaining bytes (data)
+  // further deducting a command message of say 3 bytes leaves us with
+  // for example if you wanted to transmit say a number then the 
+  // max number of 9,999,999,999 billion would be that number without
+  // simplifying the expression of say that number.
   strcpy(aes.credentials, "iD:");
 
   // ------------------------------------------------------------
