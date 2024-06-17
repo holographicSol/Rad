@@ -30,7 +30,6 @@ int led_red   = 32; // led 32 RED 2 BLUE 4 GREEN
 int speaker_0 = 33; // geiger counter sound
 // radio addresses
 uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
-bool nodeIDAccepted = false;
 bool credentialsAccepted = false;
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -78,7 +77,6 @@ CommandServerStruct commandserver;
 // ----------------------------------------------------------------------------------------------------------------------------
 
 struct PayloadStruct {
-  unsigned long nodeID;
   unsigned long payloadID;
   char message[CIPHERBLOCKSIZE];
 };
@@ -113,7 +111,6 @@ void cipherReceive() {
   Serial.println("---------------------------------------------------------------------------");
 
   // ensure false
-  nodeIDAccepted = false;
   credentialsAccepted = false;
 
   // read the payload into payload struct
@@ -127,38 +124,26 @@ void cipherReceive() {
     radio.read(&payload, bytes); // fetch payload from FIFO
 
     // display raw payload
-    Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);
     Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
     Serial.print("[payload.message]        "); Serial.println(payload.message); 
     Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
 
-    // check if payload has node id and if the node id in whitelist
-    for (int i = 0; i < 6; i++) {
-      if (payload.nodeID == address[0][i]) {
-        nodeIDAccepted = true;
-      }
-    }
-    // proceed if nodeID accepted
-    if (nodeIDAccepted == true) {
+    // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
+    decrypt((char*)payload.message, aes.dec_iv);
 
-      // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
-      decrypt((char*)payload.message, aes.dec_iv);
+    // if accepted credentials 
+    if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
+      credentialsAccepted = true;
 
-      // if accepted credentials 
-      if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
-        credentialsAccepted = true;
-
-        // seperate credentials from the rest of the payload message ready for command parse
-        memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
-        strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
-        Serial.print("[Command]                "); Serial.println(commandserver.messageCommand);
-      }
+      // seperate credentials from the rest of the payload message ready for command parse
+      memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
+      strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
+      Serial.print("[Command]                "); Serial.println(commandserver.messageCommand);
     }
 
     // display payload information after decryption
     Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
     Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
-    Serial.print("[Authenticated NodeID]   "); Serial.println(nodeIDAccepted);
     Serial.print("[Credentials]            "); Serial.println(credentialsAccepted);
   }
 }
@@ -228,7 +213,6 @@ void setup() {
   // under 16 bytes for our unencrypted payload message plus an
   // extra 2 or 3 bytes for node iD and payload iD.
   strcpy(aes.credentials, "iD:");
-  // uname:pass:CPM12
 
   // ------------------------------------------------------------
 
@@ -269,7 +253,7 @@ void loop() {
     cipherReceive();
 
     // process command
-    if ((nodeIDAccepted == true) && (credentialsAccepted == true)) {
+    if (credentialsAccepted == true) {
       processCommand();
     }
   }

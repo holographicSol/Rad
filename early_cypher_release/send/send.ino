@@ -90,7 +90,6 @@ CommandServerStruct commandserver;
 // ----------------------------------------------------------------------------------------------------------------------------
 
 struct PayloadStruct {
-  unsigned long nodeID;
   unsigned long payloadID;
   char message[CIPHERBLOCKSIZE];
 };
@@ -187,14 +186,13 @@ void cipherSend() {
   Serial.println("---------------------------------------------------------------------------");
 
   // keep payloadID well withing its cast
-  if (payload.payloadID > 999) {payload.payloadID = 0;}
-  else {payload.payloadID++;}
+  payload.payloadID++;
+  // limit to an N digit number so we always know how many bytes we have left in the payload
+  if (payload.payloadID > 9) {payload.payloadID = 0;}
 
   // display raw payload
-  payload.nodeID = address[0][1]; // populate nodeiD when sending incase we are also intending to be receiving
-  Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);
   Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
-  Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
+  Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext);
   Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
 
   // encrypt and load the encrypted data into the payload
