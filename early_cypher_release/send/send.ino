@@ -252,7 +252,11 @@ void setup() {
   // further deducting a command message of say 3 bytes leaves us with
   // for example if you wanted to transmit say a number then the 
   // max number of 999,999,999 million would be that number without
-  // simplifying the expression of say that number.
+  // simplifying the expression of say that number. while instead if
+  // a max value of say 100 is requried or say 0-9 then a stronger
+  // cred string can be used. the trade off stems from a limitation
+  // of the hardware and should be considered in relation to any
+  // given requirements for a project.
   strcpy(aes.credentials, "iD:");
 
   // ------------------------------------------------------------
