@@ -224,7 +224,13 @@ void setup() {
 
   // setup aes
   aes_init();
-  strcpy(aes.credentials, "user:pass:");
+  // this is just a tag to let us know if we decrypted anything.
+  // RF24 payload limited to 32bytes while encryption doubles
+  // the size of our payload.message. this means we have a little
+  // under 16 bytes for our unencrypted payload message plus an
+  // extra 2 or 3 bytes for node iD and payload iD.
+  strcpy(aes.credentials, "iD:");
+  // uname:pass:CPM12
 
   // ------------------------------------------------------------
 
