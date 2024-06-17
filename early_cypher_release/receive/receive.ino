@@ -89,7 +89,6 @@ PayloadStruct payload;
 // Geiger Counter
 struct GCStruct {
   signed long CPM;
-  char CPM_str[16];
   float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
 };
 GCStruct geigerCounter;
@@ -181,11 +180,8 @@ void processCommand() {
 
   // cpm
   else if (strncmp( commandserver.messageCommand, "CPM", 3) == 0) {
-    memset(commandserver.messageValue, 0, sizeof(commandserver.messageValue));
     strncpy(commandserver.messageValue, commandserver.messageCommand + 3, strlen(commandserver.messageCommand) - 3);
-    memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
-    memcpy(geigerCounter.CPM_str, commandserver.messageValue, sizeof(geigerCounter.CPM_str));
-    geigerCounter.CPM = atoi(geigerCounter.CPM_str);
+    geigerCounter.CPM = atoi(commandserver.messageValue);
     geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
   }
 }
