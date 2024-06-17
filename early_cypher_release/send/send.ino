@@ -243,7 +243,7 @@ void setup() {
   // RF24 payload limited to 32bytes while encryption doubles
   // the size of our payload.message. this means we have a little
   // under 15 bytes for our unencrypted payload message plus an
-  // extra byte or so for out payloadID.
+  // extra byte or so for payloadID.
   // payload chunking is always an option but it will be slower.
   // otherwise its a trade off between longer in message creds or
   // more meaningful data being transmitted.
