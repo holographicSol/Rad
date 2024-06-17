@@ -30,7 +30,7 @@ int led_red   = 32; // rgb led, 32 red, 2 blue, 4 green. for remote geiger count
 int speaker_0 = 33; // for remote geiger counter impulses
 // radio addresses
 uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
-bool credentialsAccepted = false;
+bool fingerprintAccepted = false;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ struct AESStruct {
   byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
   char cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};              // half the size of ciphertext
   char ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
-  char credentials[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
+  char fingerprint[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
   char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
   uint16_t plain_len;
   uint16_t msgLen;
@@ -68,6 +68,7 @@ void decrypt(char * msg, byte iv[]) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+// reaching message command requieres getting through security, nothing is secure
 struct CommandServerStruct {
   char messageCommand[(unsigned long)(CIPHERBLOCKSIZE/2)];
   char messageValue[(unsigned long)(CIPHERBLOCKSIZE/2)];
@@ -76,6 +77,7 @@ CommandServerStruct commandserver;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+// a simple struct for wireless incoming/outgoing information
 struct PayloadStruct {
   unsigned long payloadID;
   char message[CIPHERBLOCKSIZE];
@@ -84,10 +86,10 @@ PayloadStruct payload;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-// Geiger Counter
+// remote sensor data: geiger counter module
 struct GCStruct {
-  signed long CPM;
-  float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
+  signed long CPM; // stores counts per minute
+  float uSvh = 0;  // stores the micro-Sievert/hour for units of radiation dosing
 };
 GCStruct geigerCounter;
 
@@ -111,7 +113,7 @@ void cipherReceive() {
   Serial.println("---------------------------------------------------------------------------");
 
   // ensure false
-  credentialsAccepted = false;
+  fingerprintAccepted = false;
 
   // read the payload into payload struct
   uint8_t bytes = radio.getPayloadSize();
@@ -131,39 +133,40 @@ void cipherReceive() {
     // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
     decrypt((char*)payload.message, aes.dec_iv);
 
-    // if accepted credentials 
-    if ((strncmp(aes.cleartext, aes.credentials, strlen(aes.credentials)-1 )) == 0) {
-      credentialsAccepted = true;
+    // if accepted fingerprint 
+    if ((strncmp(aes.cleartext, aes.fingerprint, strlen(aes.fingerprint)-1 )) == 0) {
+      fingerprintAccepted = true;
 
-      // seperate credentials from the rest of the payload message ready for command parse
+      // seperate fingerprint from the rest of the payload message ready for command parse
       memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
-      strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.credentials), strlen(aes.cleartext) - strlen(aes.credentials));
+      strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.fingerprint), strlen(aes.cleartext) - strlen(aes.fingerprint));
       Serial.print("[Command]                "); Serial.println(commandserver.messageCommand);
     }
 
     // display payload information after decryption
     Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
     Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
-    Serial.print("[Credentials]            "); Serial.println(credentialsAccepted);
+    Serial.print("[fingerprint]            "); Serial.println(fingerprintAccepted);
   }
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-void processCommand() {
-  // compare message command to known commands.
+void commandCentre() {
+  // compare message command to known commands. we can only trust the Command Centre as much as we can trust Message Command,
+  // which is the reason for encryption and inner message fingerprinting.
 
-  // impulse
+  // geiger counter impulse
   if (strncmp( commandserver.messageCommand, "IMP", 3) == 0) {
     digitalWrite(speaker_0, HIGH);
-    digitalWrite(speaker_0, HIGH);
+    digitalWrite(speaker_0, HIGH);s
     digitalWrite(led_red, HIGH);
     delay(3);
     digitalWrite(led_red, LOW);
     digitalWrite(speaker_0, LOW);
   }
 
-  // cpm
+  // geiger counter cpm
   else if (strncmp( commandserver.messageCommand, "CPM", 3) == 0) {
     memset(commandserver.messageValue, 0, sizeof(commandserver.messageValue));
     strncpy(commandserver.messageValue, commandserver.messageCommand + 3, strlen(commandserver.messageCommand) - 3);
@@ -208,7 +211,7 @@ void setup() {
 
   // setup aes
   aes_init();
-  // the 'credentials' tag lets us know if we decrypted anything
+  // the 'fingerprint' tag lets us know if we decrypted anything
   // correctly on the remote side and is also a form of ID.
   // RF24 payload limited to 32bytes while encryption doubles
   // the size of our payload.message. this means we have a little
@@ -219,7 +222,7 @@ void setup() {
   // more meaningful data being transmitted.
   // 32 byte limitation:
   //                1           +          3           +         12
-  // example: 1byte (payloadID) + Nbytes (credentials) + remaining bytes (data)
+  // example: 1byte (payloadID) + Nbytes (fingerprint) + remaining bytes (data)
   // further deducting a command message of say 3 bytes leaves us with
   // for example if you wanted to transmit say a number then the 
   // max number of 999,999,999 million would be that number without
@@ -228,7 +231,7 @@ void setup() {
   // cred string can be used. the trade off stems from a limitation
   // of the hardware and should be considered in relation to any
   // given requirements for a project.
-  strcpy(aes.credentials, "iD:");
+  strcpy(aes.fingerprint, "iD:");
 
   // ------------------------------------------------------------
 
@@ -269,8 +272,8 @@ void loop() {
     cipherReceive();
 
     // process command
-    if (credentialsAccepted == true) {
-      processCommand();
+    if (fingerprintAccepted == true) {
+      commandCentre();
     }
   }
 }
