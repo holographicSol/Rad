@@ -46,17 +46,17 @@ uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-#define CIPHERBLOCKSIZE 32
+#define CIPHERBLOCKSIZE 32 // limited to 32 bytes inline with NRF24L01+ max payload bytes
 
 struct AESStruct {
   byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
   byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
   byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
   byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  char cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};
-  char ciphertext[CIPHERBLOCKSIZE] = {0};
-  char credentials[(unsigned long)(CIPHERBLOCKSIZE/2)];
-  char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];
+  char cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};              // half the size of ciphertext
+  char ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
+  char credentials[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
+  char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
   uint16_t plain_len;
   uint16_t msgLen;
 };
@@ -191,6 +191,7 @@ void cipherSend() {
   else {payload.payloadID++;}
 
   // display raw payload
+  payload.nodeID = address[0][1]; // populate nodeiD when sending incase we are also intending to be receiving
   Serial.print("[NodeID]                 "); Serial.println(payload.nodeID);
   Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
   Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
@@ -261,7 +262,6 @@ void setup() {
   radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
   radio.setDataRate(RF24_2MBPS);  // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
   radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
-  payload.nodeID = address[0][1];
   Serial.println("Channel:  " + String(radio.getChannel()));
   Serial.println("Data Rate:" + String(radio.getDataRate()));
   Serial.println("PA Level: " + String(radio.getPALevel()));
