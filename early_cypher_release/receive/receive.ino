@@ -1,4 +1,4 @@
-// Rad Receiver written by Benjamin Jack Cullen
+// Rad Command Server written by Benjamin Jack Cullen
 // Collect and display sensor data received from a remote device.
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -26,8 +26,8 @@ AESLib aesLib;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-int led_red   = 32; // led 32 RED 2 BLUE 4 GREEN
-int speaker_0 = 33; // geiger counter sound
+int led_red   = 32; // rgb led, 32 red, 2 blue, 4 green. for remote geiger counter impulses
+int speaker_0 = 33; // for remote geiger counter impulses
 // radio addresses
 uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
 bool credentialsAccepted = false;

@@ -1,4 +1,4 @@
-// Rad Sender written by Benjamin Jack Cullen
+// Rad Sensor Node written by Benjamin Jack Cullen
 // Collect, display and send sensor data to a remote device.
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -39,7 +39,6 @@ AESLib aesLib;
 // ----------------------------------------------------------------------------------------------------------------------------
 
 // on esp32 if broadcast false then precision is to approximately 40 microseconds at around 35 cpm with max_count 100.
-// on esp32 if broadcast true then precision is to approximately 700 microseconds at around 35 cpm with max_count 100.
 volatile bool broadcast = true;
 // Radio Addresses
 uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
