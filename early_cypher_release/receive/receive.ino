@@ -220,7 +220,7 @@ void setup() {
   // example: 1byte (payloadID) + Nbytes (credentials) + remaining bytes (data)
   // further deducting a command message of say 3 bytes leaves us with
   // for example if you wanted to transmit say a number then the 
-  // max number of 9,999,999,999 billion would be that number without
+  // max number of 999,999,999 million would be that number without
   // simplifying the expression of say that number.
   strcpy(aes.credentials, "iD:");
 
