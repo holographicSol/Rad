@@ -54,7 +54,7 @@ struct AESStruct {
   byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
   char cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};              // half the size of ciphertext
   char ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
-  char credentials[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
+  char fingerprint[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
   char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
   uint16_t plain_len;
   uint16_t msgLen;
@@ -237,7 +237,7 @@ void setup() {
 
   // setup aes
   aes_init();
-  // the 'credentials' tag lets us know if we decrypted anything
+  // the 'fingerprint' tag lets us know if we decrypted anything
   // correctly on the remote side and is also a form of ID.
   // RF24 payload limited to 32bytes while encryption doubles
   // the size of our payload.message. this means we have a little
@@ -248,7 +248,7 @@ void setup() {
   // more meaningful data being transmitted.
   // 32 byte limitation:
   //                1           +          3           +         12
-  // example: 1byte (payloadID) + Nbytes (credentials) + remaining bytes (data)
+  // example: 1byte (payloadID) + Nbytes (fingerprint) + remaining bytes (data)
   // further deducting a command message of say 3 bytes leaves us with
   // for example if you wanted to transmit say a number then the 
   // max number of 999,999,999 million would be that number without
@@ -257,7 +257,7 @@ void setup() {
   // cred string can be used. the trade off stems from a limitation
   // of the hardware and should be considered in relation to any
   // given requirements for a project.
-  strcpy(aes.credentials, "iD:");
+  strcpy(aes.fingerprint, "iD:");
 
   // ------------------------------------------------------------
 
@@ -313,7 +313,7 @@ void loop() {
     if (broadcast == true) {
       // create transmission message
       memset(aes.cleartext, 0, sizeof(aes.cleartext));
-      strcat(aes.cleartext, aes.credentials);
+      strcat(aes.cleartext, aes.fingerprint);
       strcat(aes.cleartext, "IMP");
       // encrypt and send
       cipherSend();
@@ -356,7 +356,7 @@ void loop() {
       memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
       dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
       memset(aes.cleartext, 0, sizeof(aes.cleartext));
-      strcat(aes.cleartext, aes.credentials);
+      strcat(aes.cleartext, aes.fingerprint);
       strcat(aes.cleartext, "CPM");
       strcat(aes.cleartext, geigerCounter.CPM_str);
       // encrypt and send
