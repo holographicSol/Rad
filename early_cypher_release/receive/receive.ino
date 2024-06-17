@@ -152,8 +152,8 @@ void cipherReceive() {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-void commandCentre() {
-  // compare message command to known commands. we can only trust the Command Centre as much as we can trust Message Command,
+void centralCommand() {
+  // compare message command to known commands. we can only trust the central command as much as we can trust message command,
   // which is the reason for encryption and inner message fingerprinting.
 
   // geiger counter impulse
