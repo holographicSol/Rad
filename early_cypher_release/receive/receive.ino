@@ -68,7 +68,7 @@ void decrypt(char * msg, byte iv[]) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-// reaching message command requieres getting through security, nothing is secure
+// reaching message command requieres getting through security, consider nothing as secure
 struct CommandServerStruct {
   char messageCommand[(unsigned long)(CIPHERBLOCKSIZE/2)];
   char messageValue[(unsigned long)(CIPHERBLOCKSIZE/2)];
