@@ -238,7 +238,8 @@ void setup() {
 
   // setup aes
   aes_init();
-  // the 'credentials' tag lets us know if we decrypted anything.
+  // the 'credentials' tag lets us know if we decrypted anything
+  // correctly on the remote side and is also a form of ID.
   // RF24 payload limited to 32bytes while encryption doubles
   // the size of our payload.message. this means we have a little
   // under 15 bytes for our unencrypted payload message plus an
