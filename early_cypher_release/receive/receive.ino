@@ -212,6 +212,15 @@ void setup() {
   // the size of our payload.message. this means we have a little
   // under 15 bytes for our unencrypted payload message plus an
   // extra byte or so for out payloadID.
+  // payload chunking is always an option but it will be slower.
+  // otherwise its a trade off between longer in message creds or
+  // more meaningful data being transmitted.
+  // 32 byte limitation:
+  //                1           +          3           +         12
+  // example: 1byte (payloadID) + Nbytes (credentials) + remaining bytes (data)
+  // further deducting a command message of say 3 bytes leaves us with
+  // for example a max number of 9,999,999,999 billion without simplifying
+  // the expression of say that number.
   strcpy(aes.credentials, "iD:");
 
   // ------------------------------------------------------------
