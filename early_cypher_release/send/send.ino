@@ -1,5 +1,5 @@
 // Rad Sensor Node written by Benjamin Jack Cullen
-// Collect, display and send sensor data to a remote device.
+// Collect, display and send sensor data to the Rad Command Server.
 
 // ----------------------------------------------------------------------------------------------------------------------------
 

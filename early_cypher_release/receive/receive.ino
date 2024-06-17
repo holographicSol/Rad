@@ -1,5 +1,5 @@
 // Rad Command Server written by Benjamin Jack Cullen
-// Collect and display sensor data received from a remote device.
+// Collect and display sensor data received from a remote Rad Sensor Node.
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
