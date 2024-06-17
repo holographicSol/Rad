@@ -35,15 +35,17 @@ bool credentialsAccepted = false;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+#define CIPHERBLOCKSIZE 32
+
 struct AESStruct {
   byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
   byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
   byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
   byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  char cleartext[16] = {0};
-  char ciphertext[32] = {0};
-  char credentials[16];
-  char tmp_cleartext[16];
+  char cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};
+  char ciphertext[CIPHERBLOCKSIZE] = {0};
+  char credentials[(unsigned long)(CIPHERBLOCKSIZE/2)];
+  char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];
   uint16_t plain_len;
   uint16_t msgLen;
 };
@@ -68,8 +70,8 @@ void decrypt(char * msg, byte iv[]) {
 // ----------------------------------------------------------------------------------------------------------------------------
 
 struct CommandServerStruct {
-  char messageCommand[16];
-  char messageValue[16];
+  char messageCommand[(unsigned long)(CIPHERBLOCKSIZE/2)];
+  char messageValue[(unsigned long)(CIPHERBLOCKSIZE/2)];
 };
 CommandServerStruct commandserver;
 
@@ -78,7 +80,7 @@ CommandServerStruct commandserver;
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
-  char message[32];
+  char message[CIPHERBLOCKSIZE];
 };
 PayloadStruct payload;
 
