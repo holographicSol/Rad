@@ -51,10 +51,10 @@ struct AESStruct {
   byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
   byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
   byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  char cleartext[256] = {0};
-  char ciphertext[512] = {0};
+  char cleartext[16] = {0};
+  char ciphertext[32] = {0};
   char credentials[16];
-  char tmp_cleartext[256];
+  char tmp_cleartext[16];
   uint16_t plain_len;
   uint16_t msgLen;
 };
@@ -90,7 +90,7 @@ CommandServerStruct commandserver;
 struct PayloadStruct {
   unsigned long nodeID;
   unsigned long payloadID;
-  char message[1000];
+  char message[32];
 };
 PayloadStruct payload;
 
