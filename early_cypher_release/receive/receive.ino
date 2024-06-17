@@ -86,7 +86,7 @@ PayloadStruct payload;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-// remote sensor data: geiger counter module
+// remote geiger counter sensor
 struct GCStruct {
   signed long CPM; // stores counts per minute
   float uSvh = 0;  // stores the micro-Sievert/hour for units of radiation dosing
