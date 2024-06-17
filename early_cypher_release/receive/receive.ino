@@ -165,6 +165,7 @@ void processCommand() {
 
   // cpm
   else if (strncmp( commandserver.messageCommand, "CPM", 3) == 0) {
+    memset(commandserver.messageValue, 0, sizeof(commandserver.messageValue));
     strncpy(commandserver.messageValue, commandserver.messageCommand + 3, strlen(commandserver.messageCommand) - 3);
     geigerCounter.CPM = atoi(commandserver.messageValue);
     geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
