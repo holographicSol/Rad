@@ -38,6 +38,8 @@ int speaker_0 = 33; // for remote geiger counter impulses
 //                                                                                                                 RADIO STRUCT
 
 struct RadioStruct {
+  uint8_t       rx_bytes;
+  uint8_t       rx_pipe;
   volatile bool broadcast        = true;
   bool          rf24_rx_report   = false;
   uint8_t       address[1024][6] = {"0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
@@ -177,14 +179,14 @@ bool cipherReceive() {
   aes.fingerprintAccepted = false;
 
   // read the payload into payload struct
-  uint8_t bytes = radio.getPayloadSize();
+  radioData.rx_bytes = radio.getPayloadSize();
 
   // check payload size within limit
-  if (bytes <= sizeof(payload)) {
+  if (radioData.rx_bytes <= sizeof(payload)) {
     
     // read the payload into the payload struct
     memset(payload.message, 0, sizeof(payload.message));
-    radio.read(&payload, bytes); // fetch payload from FIFO
+    radio.read(&payload, radioData.rx_bytes); // fetch payload from FIFO
 
     // display raw payload
     Serial.println("[Receiving]");
@@ -253,6 +255,7 @@ void cipherSend() {
 //                                                                                                            FUNCTION: CENTCOM
 
 void centralCommand() {
+
   /*
   compare message command to known commands. we can only trust the central command as much as we can trust message command,
   which is the reason for encryption and inner message fingerprinting.
@@ -385,8 +388,7 @@ void loop() {
   radio.openReadingPipe(1, radioData.address[0][0]);
   radio.startListening();
   // get payload
-  uint8_t pipe;
-  if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
+  if (radio.available(&radioData.rx_pipe)) { // is there a payload? get the pipe number that recieved it
     // go through security
     if (cipherReceive() == true) {
       // go to central command
