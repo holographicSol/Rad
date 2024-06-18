@@ -136,18 +136,18 @@ struct TimeStruct {
 TimeStruct timeData;
 
 // ----------------------------------------------------------------------------------------------------------------------------
-//                                                                                                SSD1306 FRAME: GEIGER COUNTER
+//                                                                                               SSD1306 FRAME: DISPLAY A FRAME
 
 /*
 this method of writing to the SSD1306 as provided in the library example, refreshes the display very satisfactorily and is far
 superior to clearing parts of the screen or indeed the whole screen manually (display.cls()) prior to writing to the display.
 */
 
-void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+void DisplayFrame(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(display->getWidth()/2, 0, "RAD COMMAND SERVER");
 }
-FrameCallback frames[] = { GC_Measurements }; // array keeps function pointers to all frames are the single views that slide in
+FrameCallback frames[] = { DisplayFrame }; // array keeps function pointers to all frames are the single views that slide in
 int frameCount = 1;
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -405,12 +405,12 @@ void setup() {
   display.println("starting..");
 
   // --------------------------------------------------------------------------------------------------------------------------
-  //                                                                                                       SETUP GEIGER COUNTER
+  //                                                                                                                 SETUP PINS
 
-  pinMode(ledData.R_LED_0, OUTPUT);
-  pinMode(soundData.SOUND_0, OUTPUT);
-  digitalWrite(soundData.SOUND_0, LOW);
-  digitalWrite(ledData.R_LED_0, LOW);
+  // pinMode(ledData.R_LED_0, OUTPUT);
+  // pinMode(soundData.SOUND_0, OUTPUT);
+  // digitalWrite(soundData.SOUND_0, LOW);
+  // digitalWrite(ledData.R_LED_0, LOW);
 
   // --------------------------------------------------------------------------------------------------------------------------
   //                                                                                                                  SETUP AES
