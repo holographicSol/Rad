@@ -1,5 +1,7 @@
-// Rad Command Server written by Benjamin Jack Cullen
-// Collect and display sensor data received from remote Rad Sensor Node(s).
+/*
+Rad Command Server written by Benjamin Jack Cullen
+Collect and display sensor data received from remote Rad Sensor Node(s).
+*/
 
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                    LIBRARIES
@@ -252,9 +254,11 @@ void cipherSend() {
 //                                                                                                            FUNCTION: CENTCOM
 
 void centralCommand() {
-  // compare message command to known commands. we can only trust the central command as much as we can trust message command,
-  // which is the reason for encryption and inner message fingerprinting.
-  // add any commands intended to be received from any nodes here below: 
+  /*
+  compare message command to known commands. we can only trust the central command as much as we can trust message command,
+  which is the reason for encryption and inner message fingerprinting.
+  add any commands intended to be received from any nodes here below:
+  */
 
   // geiger counter impulse
   if (strncmp( commandserver.messageCommand, "IMP", 3) == 0) {
