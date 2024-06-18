@@ -122,11 +122,11 @@ superior to clearing parts of the screen or indeed the whole screen manually (di
 */
 
 
-void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+void DisplayFrame(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->drawString(display->getWidth()/2, 0, "RAD SENSOR NODE");
 }
-FrameCallback frames[] = { GC_Measurements }; // array keeps function pointers to all frames are the single views that slide in
+FrameCallback frames[] = { DisplayFrame }; // array keeps function pointers to all frames are the single views that slide in
 int frameCount = 1;
 
 // ----------------------------------------------------------------------------------------------------------------------------
