@@ -32,6 +32,11 @@ AESLib        aesLib;
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                 RADIO STRUCT
 
+/*
+organize radio related data into one place. note that payload data although related, is intentionally a seperate struct because
+the payload struct is actually intended to be sent and received in entirety through any entrances and exits to be digestable. 
+*/
+
 struct RadioStruct {
   uint8_t       rx_pipe;
   uint8_t       rx_bytes;

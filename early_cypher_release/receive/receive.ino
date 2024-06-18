@@ -29,6 +29,10 @@ AESLib        aesLib;
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                   LED STRUCT
 
+/*
+organize any leds all into one place. the leds have not been too specifically named so they can be repurposed when necessary.
+*/
+
 struct LEDStruct {
   int R_LED_0 = 32;
   int G_LED_0 = 4;
@@ -39,6 +43,10 @@ LEDStruct ledData;
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                 SOUND STRUCT
 
+/*
+organize any sound modules into one place. they have not been too specifically named so they can be repurposed when necessary.
+*/
+
 struct SoundStruct {
   int SOUND_0  = 33;
 };
@@ -46,6 +54,11 @@ SoundStruct soundData;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                 RADIO STRUCT
+
+/*
+organize radio related data into one place. note that payload data although related, is intentionally a seperate struct because
+the payload struct is actually intended to be sent and received in entirety through any entrances and exits to be digestable. 
+*/
 
 struct RadioStruct {
   uint8_t       rx_bytes;
