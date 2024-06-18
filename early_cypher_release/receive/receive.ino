@@ -6,8 +6,6 @@ Collect and display sensor data received from remote Rad Sensor Node(s).
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                    LIBRARIES
 
-
-#include <printf.h>
 #include <SPI.h>
 #include <RF24.h>          // RF24                                       http://nRF24.github.io/RF24
 #include <SSD1306Wire.h>   // SSD1306Wire                                https://gitlab.com/alexpr0/ssd1306wire

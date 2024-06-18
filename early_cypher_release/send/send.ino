@@ -6,12 +6,7 @@ Collect, display and send sensor data to the Rad Command Server.
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                    LIBRARIES
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <printf.h>
-#include <math.h>
 #include <SPI.h>
-#include <Arduino.h>
 #include <Wire.h>
 #include <RF24.h>          // RF24                                       http://nRF24.github.io/RF24
 #include <SSD1306Wire.h>   // SSD1306Wire                                https://gitlab.com/alexpr0/ssd1306wire
