@@ -244,7 +244,7 @@ reach the command center. nothing is secure but we should implement some degree(
 */
 
 bool cipherReceive() {
-  Serial.println("---------------------------------------------------------------------------");
+  Serial.println("------------------------------------------------------------------------------------------------------------");
 
   // ensure false
   aesData.fingerprintAccepted = false;
@@ -289,8 +289,16 @@ bool cipherReceive() {
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                        FUNCTION: CIPHER SEND
 
+/*
+before calling cipher send, first populate aesData.cleartext with data you wish to encrypt and send, cipherSend will do the rest.
+1: zero cleartext with memset.
+2: strcat cleartext with fingerprint.
+3: strcat cleartext with any desired data (within buffer limit). 
+4: call cipherSend().
+*/
+
 void cipherSend() {
-  Serial.println("---------------------------------------------------------------------------");
+  Serial.println("------------------------------------------------------------------------------------------------------------");
 
   // keep payloadID well withing its cast
   payload.payloadID++;
