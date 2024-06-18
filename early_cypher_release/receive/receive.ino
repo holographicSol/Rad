@@ -15,7 +15,6 @@ Collect and display sensor data received from remote Rad Sensor Node(s).
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                      DEFINES
 
-#define gc_warning_level_0  99 // warn if remote geiger counter reaches this cpm
 #define CE_PIN              25 // radio can use tx
 #define CSN_PIN             26 // radio can use rx
 #define CIPHERBLOCKSIZE     32 // limited to 32 bytes inline with NRF24L01+ max payload bytes
@@ -72,6 +71,7 @@ struct GCStruct {
   signed long   CPM;           // stores counts per minute
   float         uSvh      = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 5; // interval between sending demo command to sensor
+  unsigned long gc_warn_0 = 100;
 };
 GCStruct geigerCounter;
 
@@ -99,7 +99,7 @@ TimeStruct timeData;
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  if (geigerCounter.CPM >= gc_warning_level_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+  if (geigerCounter.CPM >= geigerCounter.gc_warn_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
   display->drawString(display->getWidth()/2, 25, "cpm");
   display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
   display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
