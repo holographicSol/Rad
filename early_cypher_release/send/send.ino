@@ -100,7 +100,7 @@ struct GCStruct {
   unsigned long maxPeriod = 60;             // maximum logging period in seconds.
   unsigned long gc_warn_0 = 100;
 };
-GCStruct geigerCounter;
+GCStruct gcData;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                  TIME STRUCT
@@ -137,12 +137,12 @@ superior to clearing parts of the screen or indeed the whole screen manually (di
 
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  if (geigerCounter.CPM >= geigerCounter.gc_warn_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+  if (gcData.CPM >= gcData.gc_warn_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
   else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
   display->drawString(display->getWidth()/2, 25, "cpm");
-  display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
+  display->drawString(display->getWidth()/2, 13, String(gcData.CPM));
   display->drawString(display->getWidth()/2, display->getHeight()-10, "uSv/h");
-  display->drawString(display->getWidth()/2, display->getHeight()-22, String(geigerCounter.uSvh));
+  display->drawString(display->getWidth()/2, display->getHeight()-22, String(gcData.uSvh));
 }
 FrameCallback frames[] = { GC_Measurements }; // array keeps function pointers to all frames are the single views that slide in
 int frameCount = 1;
@@ -170,23 +170,23 @@ struct AESStruct {
   uint16_t plain_len;
   uint16_t msgLen;
 };
-AESStruct aes;
+AESStruct aesData;
 
 void aes_init() {
-  aesLib.gen_iv(aes.aes_iv);
+  aesLib.gen_iv(aesData.aes_iv);
   aesLib.set_paddingmode((paddingMode)0);
 }
 void encrypt(char * msg, byte iv[]) {
-  aes.msgLen = strlen(msg);
-  memset(aes.ciphertext, 0, sizeof(aes.ciphertext));
-  aesLib.encrypt64((const byte*)msg, aes.msgLen, aes.ciphertext, aes.aes_key, sizeof(aes.aes_key), iv);
+  aesData.msgLen = strlen(msg);
+  memset(aesData.ciphertext, 0, sizeof(aesData.ciphertext));
+  aesLib.encrypt64((const byte*)msg, aesData.msgLen, aesData.ciphertext, aesData.aes_key, sizeof(aesData.aes_key), iv);
 }
 void decrypt(char * msg, byte iv[]) {
-  aes.msgLen = strlen(msg);
-  memset(aes.cleartext, 0, sizeof(aes.cleartext));
+  aesData.msgLen = strlen(msg);
+  memset(aesData.cleartext, 0, sizeof(aesData.cleartext));
   char tmp_cleartext[256];
-  aes.plain_len = aesLib.decrypt64(msg, aes.msgLen, (byte*)aes.tmp_cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
-  strncpy(aes.cleartext, aes.tmp_cleartext, aes.plain_len);
+  aesData.plain_len = aesLib.decrypt64(msg, aesData.msgLen, (byte*)aesData.tmp_cleartext, aesData.aes_key, sizeof(aesData.aes_key), iv);
+  strncpy(aesData.cleartext, aesData.tmp_cleartext, aesData.plain_len);
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ bool cipherReceive() {
   Serial.println("---------------------------------------------------------------------------");
 
   // ensure false
-  aes.fingerprintAccepted = false;
+  aesData.fingerprintAccepted = false;
 
   // read the payload into payload struct
   radioData.rx_bytes = radio.getPayloadSize();
@@ -236,29 +236,29 @@ bool cipherReceive() {
 
     // display raw payload
     Serial.println("[Receiving]");
-    Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
-    Serial.print("[payload.message]        "); Serial.println(payload.message); 
-    Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
+    Serial.print("[payload.payloadID]          "); Serial.println(payload.payloadID);
+    Serial.print("[payload.message]            "); Serial.println(payload.message); 
+    Serial.print("[Bytes(payload.message)]     "); Serial.println(strlen(payload.message));
 
     // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
-    decrypt((char*)payload.message, aes.dec_iv);
+    decrypt((char*)payload.message, aesData.dec_iv);
 
     // if accepted fingerprint 
-    if ((strncmp(aes.cleartext, aes.fingerprint, strlen(aes.fingerprint)-1 )) == 0) {
-      aes.fingerprintAccepted = true;
+    if ((strncmp(aesData.cleartext, aesData.fingerprint, strlen(aesData.fingerprint)-1 )) == 0) {
+      aesData.fingerprintAccepted = true;
 
       // seperate fingerprint from the rest of the payload message ready for command parse
       memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
-      strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.fingerprint), strlen(aes.cleartext) - strlen(aes.fingerprint));
-      Serial.print("[Command]                "); Serial.println(commandserver.messageCommand);
+      strncpy(commandserver.messageCommand, aesData.cleartext + strlen(aesData.fingerprint), strlen(aesData.cleartext) - strlen(aesData.fingerprint));
+      Serial.print("[Command]                    "); Serial.println(commandserver.messageCommand);
     }
 
     // display payload information after decryption
-    Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
-    Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
-    Serial.print("[fingerprint]            "); Serial.println(aes.fingerprintAccepted);
+    Serial.print("[aesData.cleartext]          "); Serial.println(aesData.cleartext); 
+    Serial.print("[Bytes(aesData.cleartext)]   "); Serial.println(strlen(aesData.cleartext));
+    Serial.print("[fingerprint]                "); Serial.println(aesData.fingerprintAccepted);
   }
-  return aes.fingerprintAccepted;
+  return aesData.fingerprintAccepted;
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -274,24 +274,24 @@ void cipherSend() {
 
   // display raw payload
   Serial.println("[Sending]");
-  Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
-  Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext);
-  Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
+  Serial.print("[payload.payloadID]          "); Serial.println(payload.payloadID);
+  Serial.print("[aesData.cleartext]          "); Serial.println(aesData.cleartext);
+  Serial.print("[Bytes(aesData.cleartext)]   "); Serial.println(strlen(aesData.cleartext));
 
   // encrypt and load the encrypted data into the payload
-  encrypt((char*)aes.cleartext, aes.enc_iv);
+  encrypt((char*)aesData.cleartext, aesData.enc_iv);
   memset(payload.message, 0, sizeof(payload.message));
-  memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));
+  memcpy(payload.message, aesData.ciphertext, sizeof(aesData.ciphertext));
 
   // display payload information after encryption
-  Serial.print("[payload.message]        "); Serial.println(payload.message); 
-  Serial.print("[Bytes(aes.ciphertext)]  "); Serial.println(strlen(aes.ciphertext));
+  Serial.print("[payload.message]            "); Serial.println(payload.message); 
+  Serial.print("[Bytes(aesData.ciphertext)]  "); Serial.println(strlen(aesData.ciphertext));
 
   // send
-  Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
+  Serial.print("[Bytes(payload.message)]     "); Serial.println(strlen(payload.message));
   radioData.rf24_rx_report = false;
   radioData.rf24_rx_report = radio.write(&payload, sizeof(payload));
-  Serial.print("[Payload Delivery]       "); Serial.println(radioData.rf24_rx_report);
+  Serial.print("[Payload Delivery]           "); Serial.println(radioData.rf24_rx_report);
   // uncomment to test immediate replay attack
   // delay(1000);
   // radio.write(&payload, sizeof(payload));
@@ -319,19 +319,19 @@ void radNodeSensor0() {
   timeData.timestamp = currentTime();
   
   // set previous time each minute
-  if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
+  if ((timeData.timestamp - timeData.previousTimestamp) > gcData.maxPeriod) {
     Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
     timeData.previousTimestamp = timeData.timestamp;
-    geigerCounter.warmup = false;
+    gcData.warmup = false;
   }
   // check if impulse
-  if (geigerCounter.impulse == true) {
-    geigerCounter.impulse = false;
+  if (gcData.impulse == true) {
+    gcData.impulse = false;
     if (radioData.broadcast == true) {
       // create transmission message
-      memset(aes.cleartext, 0, sizeof(aes.cleartext));
-      strcat(aes.cleartext, aes.fingerprint);
-      strcat(aes.cleartext, "IMP");
+      memset(aesData.cleartext, 0, sizeof(aesData.cleartext));
+      strcat(aesData.cleartext, aesData.fingerprint);
+      strcat(aesData.cleartext, "IMP");
       // set our writing pipe each time in case we write to different pipes another time
       radio.stopListening();
       radio.flush_tx();
@@ -341,40 +341,40 @@ void radNodeSensor0() {
     }
   }
   // step through the array and remove expired impulses by exluding them from our new array.
-  geigerCounter.precisionCounts = 0;
-  memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
+  gcData.precisionCounts = 0;
+  memset(gcData.countsArrayTemp, 0, sizeof(gcData.countsArrayTemp));
   for (int i = 0; i < GCMAXCOUNT; i++) {
-    if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
+    if (gcData.countsArray[i] >= 1) { // only entertain non zero elements
     
       // compare current timestamp (per loop) to timestamps in array
-      if (((timeData.timestamp - (geigerCounter.countsArray[i])) > geigerCounter.maxPeriod)) {
-        geigerCounter.countsArray[i] = 0;
+      if (((timeData.timestamp - (gcData.countsArray[i])) > gcData.maxPeriod)) {
+        gcData.countsArray[i] = 0;
         }
       else {
-        geigerCounter.precisionCounts++; // non expired counters increment the precision counter
-        geigerCounter.countsArrayTemp[i] = geigerCounter.countsArray[i]; // store non expired
+        gcData.precisionCounts++; // non expired counters increment the precision counter
+        gcData.countsArrayTemp[i] = gcData.countsArray[i]; // store non expired
       }
     }
   }
-  memset(geigerCounter.countsArray, 0, sizeof(geigerCounter.countsArray));
-  memcpy(geigerCounter.countsArray, geigerCounter.countsArrayTemp, sizeof(geigerCounter.countsArray));
+  memset(gcData.countsArray, 0, sizeof(gcData.countsArray));
+  memcpy(gcData.countsArray, gcData.countsArrayTemp, sizeof(gcData.countsArray));
 
   // then calculate usv/h
-  geigerCounter.CPM = geigerCounter.precisionCounts;
-  geigerCounter.uSvh = geigerCounter.CPM * 0.00332;
+  gcData.CPM = gcData.precisionCounts;
+  gcData.uSvh = gcData.CPM * 0.00332;
 
   if (radioData.broadcast == true) {
     // todo: broadcast periodically outside of value change
-    if (geigerCounter.CPM != geigerCounter.previousCPM) {
-      geigerCounter.previousCPM = geigerCounter.CPM;
+    if (gcData.CPM != gcData.previousCPM) {
+      gcData.previousCPM = gcData.CPM;
       timeData.previousTimestampSecond = timeData.timestamp;
       // create transmission message
-      memset(geigerCounter.CPM_str, 0, sizeof(geigerCounter.CPM_str));
-      dtostrf(geigerCounter.CPM, 0, 0, geigerCounter.CPM_str);
-      memset(aes.cleartext, 0, sizeof(aes.cleartext));
-      strcat(aes.cleartext, aes.fingerprint);
-      strcat(aes.cleartext, "CPM");
-      strcat(aes.cleartext, geigerCounter.CPM_str);
+      memset(gcData.CPM_str, 0, sizeof(gcData.CPM_str));
+      dtostrf(gcData.CPM, 0, 0, gcData.CPM_str);
+      memset(aesData.cleartext, 0, sizeof(aesData.cleartext));
+      strcat(aesData.cleartext, aesData.fingerprint);
+      strcat(aesData.cleartext, "CPM");
+      strcat(aesData.cleartext, gcData.CPM_str);
       // set our writing pipe each time in case we write to different pipes another time
       radio.stopListening();
       radio.flush_tx();
@@ -419,7 +419,7 @@ void setup() {
                   1         +          3           +         12
           1byte (payloadID) + Nbytes (fingerprint) + remaining bytes (data)
   */
-  strcpy(aes.fingerprint, "iD:");
+  strcpy(aesData.fingerprint, "iD:");
 
   // --------------------------------------------------------------------------------------------------------------------------
   //                                                                                                                SETUP RADIO
@@ -484,8 +484,8 @@ void loop() {
 //                                                                                         ISR FUNCTION: GEIGER COUNTER IMPULSE
 
 void tubeImpulseISR() {
-  geigerCounter.impulse = true;
-  if (geigerCounter.countsIter < GCMAXCOUNT) {geigerCounter.countsIter++;}
-  else {geigerCounter.countsIter=0;}
-  geigerCounter.countsArray[geigerCounter.countsIter] = timeData.timestamp;
+  gcData.impulse = true;
+  if (gcData.countsIter < GCMAXCOUNT) {gcData.countsIter++;}
+  else {gcData.countsIter=0;}
+  gcData.countsArray[gcData.countsIter] = timeData.timestamp;
 }
