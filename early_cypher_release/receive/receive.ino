@@ -167,6 +167,7 @@ bool cipherReceive() {
     radio.read(&payload, bytes); // fetch payload from FIFO
 
     // display raw payload
+    Serial.println("[Receiving]");
     Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
     Serial.print("[payload.message]        "); Serial.println(payload.message); 
     Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
@@ -203,6 +204,7 @@ void cipherSend() {
   if (payload.payloadID > 9) {payload.payloadID = 0;}
 
   // display raw payload
+  Serial.println("[Sending]");
   Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
   Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext);
   Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
@@ -329,7 +331,6 @@ void setup() {
   radio.flush_rx();
   radio.flush_tx();
   radio.setPayloadSize(sizeof(payload));   // 2x int datatype occupy 8 bytes
-  radio.openReadingPipe(1, address[0][0]); // using pipe 0
   radio.stopListening();
   radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
   radio.setDataRate(RF24_2MBPS);  // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
