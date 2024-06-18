@@ -10,6 +10,10 @@ AES 128 encrypted transmissions between the command server and sensor nodes.
 
 ---
 
+Sensor nodes can easily be in one of three mmodes: (1) Transmit only, (2) Receive only (3) Transmit and receive.
+
+---
+
 ![plot](./resources/Rad.jpg)
 
 ---
