@@ -121,9 +121,8 @@ struct TimeStruct {
 TimeStruct timeData;
 
 // ----------------------------------------------------------------------------------------------------------------------------
-//                                                                                                   OLED FRAME: GEIGER COUNTER
+//                                                                                                SSD1306 FRAME: GEIGER COUNTER
 
-// frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   if (geigerCounter.CPM >= geigerCounter.gc_warn_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
