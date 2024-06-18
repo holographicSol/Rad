@@ -489,19 +489,29 @@ void loop() {
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.mainLoopTimeStart = micros();
 
-  // default to rx each loop (optional because this is a sensor node and does not have to receive but it can)
-  // uncomment to enable this node to receive commands (for security reasons you may desire your sensor node to only tx)
-  radio.openReadingPipe(1, radioData.address[0][1]);
-  radio.startListening();
-  // get payload
-  uint8_t pipe;
-  if (radio.available(&radioData.rx_pipe)) { // is there a payload? get the pipe number that recieved it
-    // go through security
-    if (cipherReceive() == true) {
-      // go to central command
-      centralCommand();
-    }
-  }
+  // ----------------------------------------------------------------------------------------------------------------------------
+  //                                                                                              OPTIONAL RESPONSIVE SENSOR NODE
+
+  /*
+  optional because this is a sensor node and does not have to receive but it can). for security reasons you may desire your sensor
+  node to only tx, however if it is required that a sensor node be remotely responsive then that can easily be achieved in this
+  setup by uncommenting the following code block:
+  */
+
+  // radio.openReadingPipe(1, radioData.address[0][1]);
+  // radio.startListening();
+  // // get payload
+  // uint8_t pipe;
+  // if (radio.available(&radioData.rx_pipe)) { // is there a payload? get the pipe number that recieved it
+  //   // go through security
+  //   if (cipherReceive() == true) {
+  //     // go to central command
+  //     centralCommand();
+  //   }
+  // }
+
+  // ----------------------------------------------------------------------------------------------------------------------------
+  //                                                                                             COLLECT AND TRANSMIT SENSOR DATA
 
   // get sensor information and send the results
   radNodeSensor0();

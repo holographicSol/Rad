@@ -476,6 +476,9 @@ void setup() {
 
 void loop() {
 
+  // ----------------------------------------------------------------------------------------------------------------------------
+  //                                                                                     COLLECT AND PROCESS RECEIVED SENSOR DATA
+
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.mainLoopTimeStart = micros();
 
@@ -491,8 +494,18 @@ void loop() {
     }
   }
 
-  // optionally send to a sensor node (requires sensor node is enabled to receive) uncomment to transmit to a sensor node (demo)
-  radNodeSensor0();
+  // ----------------------------------------------------------------------------------------------------------------------------
+  //                                                                                              OPTIONAL RESPONSIVE SENSOR NODE
+
+  /*
+  optional because a sensor node and does not have to receive but it can. for security reasons you may desire your sensor node to
+  only tx, however if it is required that a sensor node be remotely responsive then that can easily be achieved in this setup by
+  uncommenting the following function call or making your own function to call:
+  */
+
+  // radNodeSensor0(); // uncomment to call transmit to sensor node demo function
+
+  // ----------------------------------------------------------------------------------------------------------------------------
 
   // refresh ssd1306 128x64 display
   ui.update();
