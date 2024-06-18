@@ -281,10 +281,20 @@ bool cipherReceive() {
 
 /*
 before calling cipher send, first populate aesData.cleartext with data you wish to encrypt and send, cipherSend will do the rest.
-1: zero cleartext with memset.
-2: strcat cleartext with fingerprint.
-3: strcat cleartext with any desired data (within buffer limit). 
-4: call cipherSend().
+be sure to also stopListening and specify the desired writing pipe and address. the proceedure is as follows to cipher send:
+
+1: create transmission message
+  memset(aesData.cleartext, 0, sizeof(aesData.cleartext));
+  strcat(aesData.cleartext, aesData.fingerprint);
+  strcat(aesData.cleartext, "DATA");
+
+2: set desired writing pipe and address
+  radio.stopListening();
+  radio.flush_tx();
+  radio.openWritingPipe(radioData.address[0][1]);
+
+3: encrypt and send by simply calling cipher send
+  cipherSend();
 */
 
 void cipherSend() {
