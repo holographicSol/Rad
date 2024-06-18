@@ -1,9 +1,12 @@
-#A Rad Command Server with sensor node(s).
+A Rad Command Server with sensor node(s).
+
+---
 
 SensorNodeZero: Geiger counter. 
 
+---
 
-#Requirements:
+Requirements:
 
 2x KEYESTUDIO ESP32 WROOM Development Board
 
