@@ -422,17 +422,17 @@ void loop() {
 
   // default to rx each loop (optional because this is a sensor node and does not have to receive but it can)
   // uncomment to enable this node to receive commands (for security reasons you may desire your sensor node to only tx)
-  // radio.openReadingPipe(1, address[0][1]); // using pipe 0
-  // radio.startListening();
-  // // get payload
-  // uint8_t pipe;
-  // if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
-  //   // go through security
-  //   if (cipherReceive() == true) {
-  //     // go to central command
-  //     centralCommand();
-  //   }
-  // }
+  radio.openReadingPipe(1, address[0][1]); // using pipe 0
+  radio.startListening();
+  // get payload
+  uint8_t pipe;
+  if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
+    // go through security
+    if (cipherReceive() == true) {
+      // go to central command
+      centralCommand();
+    }
+  }
 
   // get sensor information and send the results
   radNodeSensor0();

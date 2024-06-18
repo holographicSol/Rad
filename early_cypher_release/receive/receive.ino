@@ -341,11 +341,6 @@ void setup() {
   radio.startListening();
 
   // ------------------------------------------------------------
-
-  // setup interrupts
-  // attachInterrupt(CSN_PIN, RFRX, FALLING);
-
-  // ------------------------------------------------------------
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -369,7 +364,7 @@ void loop() {
   }
 
   // optionally send to a sensor node (requires sensor node is enabled to receive) uncomment to transmit to a sensor node (demo)
-  // radNodeSensor0();
+  radNodeSensor0();
 
   // refresh ssd1306 128x64 display
   ui.update();
