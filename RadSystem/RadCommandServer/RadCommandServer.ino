@@ -480,7 +480,7 @@ void loop() {
   timeData.mainLoopTimeStart = micros();
 
   // ----------------------------------------------------------------------------------------------------------------------------
-  //                                                                                     COLLECT AND PROCESS RECEIVED SENSOR DATA
+  //                                                                                                          OPTIONALLY RECEIVE  
 
   // default to rx each loop
   radio.openReadingPipe(1, radioData.address[0][0]);
@@ -495,7 +495,7 @@ void loop() {
   }
 
   // ----------------------------------------------------------------------------------------------------------------------------
-  //                                                                                              OPTIONAL RESPONSIVE SENSOR NODE
+  //                                                                                                           OPTIONALLY COMMAND
 
   /*
   optional because a sensor node does not have to receive but it can. for security reasons you may desire your sensor node to
