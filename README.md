@@ -1,10 +1,14 @@
 # Rad
 
+---
+
 A system for wireless sensors.
 
+---
 
 ![plot](./resources/Rad.jpg)
 
+---
 
 Requirements:
 
