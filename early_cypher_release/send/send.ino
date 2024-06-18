@@ -493,7 +493,7 @@ void loop() {
   //                                                                                              OPTIONAL RESPONSIVE SENSOR NODE
 
   /*
-  optional because this is a sensor node and does not have to receive but it can). for security reasons you may desire your sensor
+  optional because this is a sensor node does not have to receive but it can). for security reasons you may desire your sensor
   node to only tx, however if it is required that a sensor node be remotely responsive then that can easily be achieved in this
   setup by uncommenting the following code block:
   */
