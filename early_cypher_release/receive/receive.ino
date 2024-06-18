@@ -26,6 +26,7 @@ AESLib aesLib;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+bool rxd_role = true;
 int led_red   = 32; // rgb led, 32 red, 2 blue, 4 green. for remote geiger counter impulses
 int speaker_0 = 33; // for remote geiger counter impulses
 // radio addresses
@@ -56,8 +57,26 @@ PayloadStruct payload;
 struct GCStruct {
   signed long CPM; // stores counts per minute
   float uSvh = 0;  // stores the micro-Sievert/hour for units of radiation dosing
+  unsigned long maxPeriod = 5; // interval between sending demo command to sensor
 };
 GCStruct geigerCounter;
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+struct TimeStruct {
+  double previousTimestamp; // a placeholder for a previous time (optionally used)
+  unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
+  unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
+  double subTime;
+  double subTimeDivided;
+  double interTimeDivided;
+  unsigned long currentMilliSecond;
+  unsigned long currentSecond;
+  double timestamp;
+  double interTime;
+  double previousTimestampSecond; // a placeholder for a previous time (optionally used)
+};
+TimeStruct timeData;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -103,6 +122,30 @@ void decrypt(char * msg, byte iv[]) {
   memset(aes.cleartext, 0, sizeof(aes.cleartext));
   aes.plain_len = aesLib.decrypt64(msg, aes.msgLen, (byte*)aes.tmp_cleartext, aes.aes_key, sizeof(aes.aes_key), iv);
   strncpy(aes.cleartext, aes.tmp_cleartext, aes.plain_len);
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+double currentTime() {
+  if (timeData.subTime >= 1000) {
+      timeData.subTime = 0;
+      timeData.currentMilliSecond++;
+      if (timeData.currentMilliSecond >= 1000) {
+          timeData.currentMilliSecond = 0;
+          timeData.currentSecond++;
+      }
+  }
+  timeData.subTime += (timeData.mainLoopTimeTaken);
+  timeData.subTimeDivided = timeData.subTime / 1000000;
+  return timeData.currentSecond+timeData.subTimeDivided;
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+double interCurrentTime() {
+  timeData.interTime = (micros() - timeData.mainLoopTimeStart);
+  timeData.interTimeDivided = timeData.interTime / 1000000;
+  return timeData.timestamp+timeData.interTimeDivided;
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -208,17 +251,27 @@ void centralCommand() {
 }
 
 void radNodeSensor0() {
-  // a placeholder to remote control a sensor node.
+  // a demo function to remote control / send data to a sensor node.
 
-  // create transmission message
-  // memset(aes.cleartext, 0, sizeof(aes.cleartext));
-  // strcat(aes.cleartext, aes.fingerprint);
-  // strcat(aes.cleartext, "DATA");
-  // // set our writing pipe each time in case we write to different pipes another time
-  // radio.openWritingPipe(address[0][1]);    // always uses pipe 1
-  // // encrypt and send
-  // cipherSend();
+  // set current timestamp to be used this loop same millisecond+- depending on loop speed.
+  timeData.timestamp = currentTime();
 
+  // set previous time each minute
+  if ((timeData.timestamp - timeData.previousTimestamp) > geigerCounter.maxPeriod) {
+    Serial.print("cycle expired: "); Serial.println(timeData.timestamp, sizeof(timeData.timestamp));
+    timeData.previousTimestamp = timeData.timestamp;
+
+    // create transmission message
+    memset(aes.cleartext, 0, sizeof(aes.cleartext));
+    strcat(aes.cleartext, aes.fingerprint);
+    strcat(aes.cleartext, "DATA");
+    // set our writing pipe each time in case we write to different pipes another time
+    radio.stopListening();
+    radio.flush_tx();
+    radio.openWritingPipe(address[0][1]);    // always uses pipe 1
+    // encrypt and send
+    cipherSend();
+  }
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -287,15 +340,23 @@ void setup() {
   radio.startListening();
 
   // ------------------------------------------------------------
+
+  // setup interrupts
+  // attachInterrupt(CSN_PIN, RFRX, FALLING);
+
+  // ------------------------------------------------------------
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
 void loop() {
 
-  // refresh ssd1306 128x64 display
-  ui.update();
+  // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
+  timeData.mainLoopTimeStart = micros();
 
+  // default to rx each loop
+  radio.openReadingPipe(1, address[0][0]); // using pipe 0
+  radio.startListening();
   // get payload
   uint8_t pipe;
   if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
@@ -306,6 +367,12 @@ void loop() {
     }
   }
 
-  // uncomment to command a sensor node.
+  // optionally send to a sensor node (requires sensor node is enabled to receive) uncomment to transmit to a sensor node (demo)
   // radNodeSensor0();
+
+  // refresh ssd1306 128x64 display
+  ui.update();
+
+  // store time taken to complete
+  timeData.mainLoopTimeTaken = micros() - timeData.mainLoopTimeStart;
 }

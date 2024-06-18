@@ -267,65 +267,6 @@ void centralCommand() {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-void setup() {
-
-  // ------------------------------------------------------------
-
-  // setup serial
-  Serial.begin(115200);
-
-  // ------------------------------------------------------------
-
-  // setup display
-  display.init();
-  ui.setTargetFPS(60);
-  ui.disableAllIndicators();
-  ui.setFrames(frames, frameCount);
-  display.flipScreenVertically();
-  display.setContrast(255);
-  display.setFont(ArialMT_Plain_10);
-  display.cls();
-  display.println("starting..");
-
-  // ------------------------------------------------------------
-
-  // setup aes
-  aes_init();
-  /*
-  fingerprint is to better know if we decrypted anything correctly and can also be used for ID. consider the following wit
-  NRF24L01+ max 32 bytes payload to understand a trade off between fingerprint strength and data size, understanding that
-  the larger the fingerprint, the less the data and vis versa without compression, payload chunking etc.: 
-                  1         +          3           +         12
-          1byte (payloadID) + Nbytes (fingerprint) + remaining bytes (data)
-  */
-  strcpy(aes.fingerprint, "iD:");
-
-  // ------------------------------------------------------------
-
-  // setup radio
-  if (!radio.begin()) {
-    Serial.println(F("radio hardware is not responding!!"));
-    while (1) {}
-  }
-  radio.flush_rx();
-  radio.flush_tx();
-  radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
-  radio.openReadingPipe(1, address[0][1]); // using pipe 1
-  radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
-  radio.setDataRate(RF24_2MBPS);  // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
-  radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
-  Serial.println("Channel:  " + String(radio.getChannel()));
-  Serial.println("Data Rate:" + String(radio.getDataRate()));
-  Serial.println("PA Level: " + String(radio.getPALevel()));
-
-  // ------------------------------------------------------------
-
-  // setup interrupts
-  attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING);
-
-  // ------------------------------------------------------------
-}
-
 void radNodeSensor0() {
   
   // this setup is for measuring cpm by monitoring the radiationD-v1.0 (CAJOE) for impulses
@@ -351,6 +292,8 @@ void radNodeSensor0() {
       strcat(aes.cleartext, aes.fingerprint);
       strcat(aes.cleartext, "IMP");
       // set our writing pipe each time in case we write to different pipes another time
+      radio.stopListening();
+      radio.flush_tx();
       radio.openWritingPipe(address[0][0]); // always uses pipe 0
       // encrypt and send
       cipherSend();
@@ -397,6 +340,8 @@ void radNodeSensor0() {
       strcat(aes.cleartext, "CPM");
       strcat(aes.cleartext, geigerCounter.CPM_str);
       // set our writing pipe each time in case we write to different pipes another time
+      radio.stopListening();
+      radio.flush_tx();
       radio.openWritingPipe(address[0][0]); // always uses pipe 0
       // encrypt and send
       cipherSend();
@@ -406,12 +351,79 @@ void radNodeSensor0() {
 
 // ----------------------------------------------------------------------------------------------------------------------
 
+void setup() {
+
+  // ------------------------------------------------------------
+
+  // setup serial
+  Serial.begin(115200);
+
+  // ------------------------------------------------------------
+
+  // setup display
+  display.init();
+  ui.setTargetFPS(60);
+  ui.disableAllIndicators();
+  ui.setFrames(frames, frameCount);
+  display.flipScreenVertically();
+  display.setContrast(255);
+  display.setFont(ArialMT_Plain_10);
+  display.cls();
+  display.println("starting..");
+
+  // ------------------------------------------------------------
+
+  // setup aes
+  aes_init();
+  /*
+  fingerprint is to better know if we decrypted anything correctly and can also be used for ID. consider the following wit
+  NRF24L01+ max 32 bytes payload to understand a trade off between fingerprint strength and data size, understanding that
+  the larger the fingerprint, the less the data and vis versa without compression, payload chunking etc.: 
+                  1         +          3           +         12
+          1byte (payloadID) + Nbytes (fingerprint) + remaining bytes (data)
+  */
+  strcpy(aes.fingerprint, "iD:");
+
+  // ------------------------------------------------------------
+
+  // setup radio
+  if (!radio.begin()) {
+    Serial.println(F("radio hardware is not responding!!"));
+    while (1) {}
+  }
+  radio.flush_rx();
+  radio.flush_tx();
+  radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
+  // radio.openReadingPipe(1, address[0][1]); // using pipe 1
+  radio.stopListening();
+  radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
+  radio.setDataRate(RF24_2MBPS);  // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
+  radio.setPALevel(RF24_PA_HIGH); // RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX.
+  Serial.println("Channel:  " + String(radio.getChannel()));
+  Serial.println("Data Rate:" + String(radio.getDataRate()));
+  Serial.println("PA Level: " + String(radio.getPALevel()));
+  // radio.startListening();
+
+  // ------------------------------------------------------------
+
+  // setup interrupts
+  attachInterrupt(GEIGER_PIN, tubeImpulseISR, FALLING);
+
+  // ------------------------------------------------------------
+}
+
+// ----------------------------------------------------------------------------------------------------------------------
+
 void loop() {
 
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.mainLoopTimeStart = micros();
 
-  // optionally receive (this is the rad sensor node, uncomment if you need to remotely control this sensor.
+  // default to rx each loop (optional because this is a sensor node and does not have to receive but it can)
+  // uncomment to enable this node to receive commands (for security reasons you may desire your sensor node to only tx)
+  // radio.openReadingPipe(1, address[0][1]); // using pipe 0
+  // radio.startListening();
+  // // get payload
   // uint8_t pipe;
   // if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
   //   // go through security
@@ -421,7 +433,7 @@ void loop() {
   //   }
   // }
 
-  // get sensor information
+  // get sensor information and send the results
   radNodeSensor0();
 
   // refresh ssd1306 128x64 display
