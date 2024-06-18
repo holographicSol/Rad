@@ -4,7 +4,7 @@
 
 ---
 
-# A system for wireless sensors.
+A system for wireless sensors.
 
 ---
 
