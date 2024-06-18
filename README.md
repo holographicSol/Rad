@@ -6,6 +6,10 @@ A system for wireless sensors.
 
 ---
 
+AES 128 encrypted transmissions between the command server and sensor nodes.
+
+---
+
 ![plot](./resources/Rad.jpg)
 
 ---
