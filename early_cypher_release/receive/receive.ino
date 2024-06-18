@@ -27,9 +27,22 @@ RF24          radio(CE_PIN, CSN_PIN);  // wire up RF24 TX and RX
 AESLib        aesLib;
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                                   LED STRUCT
 
-int REDLED_0 = 32; // rgb led:  32 red,  2 blue,  4 green.
-int SOUND_0  = 33;
+struct LEDStruct {
+  int R_LED_0 = 32;
+  int G_LED_0 = 4; 
+  int B_LED_0 = 2; 
+};
+LEDStruct ledData;
+
+// ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                                 SOUND STRUCT
+
+struct SoundStruct {
+  int SOUND_0  = 33;
+};
+SoundStruct soundData;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                 RADIO STRUCT
@@ -262,12 +275,12 @@ void centralCommand() {
 
   // geiger counter impulse
   if (strncmp( commandserver.messageCommand, "IMP", 3) == 0) {
-    digitalWrite(SOUND_0, HIGH);
-    digitalWrite(SOUND_0, HIGH);
-    digitalWrite(REDLED_0, HIGH);
+    digitalWrite(soundData.SOUND_0, HIGH);
+    digitalWrite(soundData.SOUND_0, HIGH);
+    digitalWrite(ledData.R_LED_0, HIGH);
     delay(3);
-    digitalWrite(REDLED_0, LOW);
-    digitalWrite(SOUND_0, LOW);
+    digitalWrite(ledData.R_LED_0, LOW);
+    digitalWrite(soundData.SOUND_0, LOW);
   }
 
   // geiger counter cpm
@@ -334,10 +347,10 @@ void setup() {
   // --------------------------------------------------------------------------------------------------------------------------
   //                                                                                                       SETUP GEIGER COUNTER
 
-  pinMode(REDLED_0, OUTPUT);
-  pinMode(SOUND_0, OUTPUT);
-  digitalWrite(SOUND_0, LOW);
-  digitalWrite(REDLED_0, LOW);
+  pinMode(ledData.R_LED_0, OUTPUT);
+  pinMode(soundData.SOUND_0, OUTPUT);
+  digitalWrite(soundData.SOUND_0, LOW);
+  digitalWrite(ledData.R_LED_0, LOW);
 
   // --------------------------------------------------------------------------------------------------------------------------
   //                                                                                                                  SETUP AES
