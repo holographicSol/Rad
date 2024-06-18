@@ -216,7 +216,7 @@ double currentTime() {
 //                                                                                                  FUNCTION: INTERMEDIATE TIME
 
 /*
-a time between times function that used to create timestamps related to current time, without setting current time as intertime.
+a time between times function used to create timestamps related to current time, without setting current time as intertime.
 */
 
 double interCurrentTime() {
