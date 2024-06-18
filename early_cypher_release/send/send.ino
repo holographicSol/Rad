@@ -39,12 +39,12 @@ AESLib aesLib;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-// on esp32 if broadcast false then precision is to approximately 40 microseconds at around 35 cpm with max_count 100.
-volatile bool broadcast = true;
-// Radio Addresses
-uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
-bool fingerprintAccepted = false;
-bool rf24_rx_report = false;
+struct RadioStruct {
+  volatile bool broadcast = true;
+  bool rf24_rx_report = false;
+  uint8_t address[1024][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
+};
+RadioStruct radioData;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -127,6 +127,7 @@ struct AESStruct {
   char ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
   char fingerprint[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
   char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
+  bool fingerprintAccepted = false;
   uint16_t plain_len;
   uint16_t msgLen;
 };
@@ -188,7 +189,7 @@ bool cipherReceive() {
   Serial.println("---------------------------------------------------------------------------");
 
   // ensure false
-  fingerprintAccepted = false;
+  aes.fingerprintAccepted = false;
 
   // read the payload into payload struct
   uint8_t bytes = radio.getPayloadSize();
@@ -211,7 +212,7 @@ bool cipherReceive() {
 
     // if accepted fingerprint 
     if ((strncmp(aes.cleartext, aes.fingerprint, strlen(aes.fingerprint)-1 )) == 0) {
-      fingerprintAccepted = true;
+      aes.fingerprintAccepted = true;
 
       // seperate fingerprint from the rest of the payload message ready for command parse
       memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
@@ -222,9 +223,9 @@ bool cipherReceive() {
     // display payload information after decryption
     Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
     Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
-    Serial.print("[fingerprint]            "); Serial.println(fingerprintAccepted);
+    Serial.print("[fingerprint]            "); Serial.println(aes.fingerprintAccepted);
   }
-  return fingerprintAccepted;
+  return aes.fingerprintAccepted;
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -254,9 +255,9 @@ void cipherSend() {
 
   // send
   Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
-  rf24_rx_report = false;
-  rf24_rx_report = radio.write(&payload, sizeof(payload));
-  Serial.print("[Payload Delivery]       "); Serial.println(rf24_rx_report);
+  radioData.rf24_rx_report = false;
+  radioData.rf24_rx_report = radio.write(&payload, sizeof(payload));
+  Serial.print("[Payload Delivery]       "); Serial.println(radioData.rf24_rx_report);
   // uncomment to test immediate replay attack
   // delay(1000);
   // radio.write(&payload, sizeof(payload));
@@ -291,7 +292,7 @@ void radNodeSensor0() {
   // check if impulse
   if (geigerCounter.impulse == true) {
     geigerCounter.impulse = false;
-    if (broadcast == true) {
+    if (radioData.broadcast == true) {
       // create transmission message
       memset(aes.cleartext, 0, sizeof(aes.cleartext));
       strcat(aes.cleartext, aes.fingerprint);
@@ -299,7 +300,7 @@ void radNodeSensor0() {
       // set our writing pipe each time in case we write to different pipes another time
       radio.stopListening();
       radio.flush_tx();
-      radio.openWritingPipe(address[0][0]); // always uses pipe 0
+      radio.openWritingPipe(radioData.address[0][0]); // always uses pipe 0
       // encrypt and send
       cipherSend();
     }
@@ -332,7 +333,7 @@ void radNodeSensor0() {
 
   // ------------------------------------------------------------
 
-  if (broadcast == true) {
+  if (radioData.broadcast == true) {
     // todo: broadcast periodically outside of value change
     if (geigerCounter.CPM != geigerCounter.previousCPM) {
       geigerCounter.previousCPM = geigerCounter.CPM;
@@ -347,7 +348,7 @@ void radNodeSensor0() {
       // set our writing pipe each time in case we write to different pipes another time
       radio.stopListening();
       radio.flush_tx();
-      radio.openWritingPipe(address[0][0]); // always uses pipe 0
+      radio.openWritingPipe(radioData.address[0][0]); // always uses pipe 0
       // encrypt and send
       cipherSend();
     }
@@ -425,7 +426,7 @@ void loop() {
 
   // default to rx each loop (optional because this is a sensor node and does not have to receive but it can)
   // uncomment to enable this node to receive commands (for security reasons you may desire your sensor node to only tx)
-  radio.openReadingPipe(1, address[0][1]); // using pipe 0
+  radio.openReadingPipe(1, radioData.address[0][1]); // using pipe 0
   radio.startListening();
   // get payload
   uint8_t pipe;
