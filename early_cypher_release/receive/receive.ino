@@ -213,7 +213,7 @@ void radNodeSensor0() {
   // create transmission message
   // memset(aes.cleartext, 0, sizeof(aes.cleartext));
   // strcat(aes.cleartext, aes.fingerprint);
-  // strcat(aes.cleartext, "SENSOR_COMMAND");
+  // strcat(aes.cleartext, "DATA");
   // // set our writing pipe each time in case we write to different pipes another time
   // radio.openWritingPipe(address[0][1]);    // always uses pipe 1
   // // encrypt and send
