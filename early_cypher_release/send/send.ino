@@ -25,12 +25,11 @@ precise (arduino is not medical/military grade) a reading as you can at any leve
 max count from 10240 providing you beleive there is the memory and performance available on the MCU your building for.
 */
 
-#define max_count       100
-#define warning_level_0  99 // warn at this cpm 
-#define CE_PIN           25 // radio can use tx
-#define CSN_PIN          26 // radio can use rx
-#define GEIGER_PIN       27
-#define CIPHERBLOCKSIZE  32 // limited to 32 bytes inline with NRF24L01+ max payload bytes
+#define GCMAXCOUNT       100 // define geiger counter maxc ount as desired or required by memory limitations
+#define CE_PIN           25  // radio can use tx
+#define CSN_PIN          26  // radio can use rx
+#define GEIGER_PIN       27  // jumper wire between RadiationD-v1.0 (CAJOE) and ESP32 Plus
+#define CIPHERBLOCKSIZE  32  // limited to 32 bytes inline with NRF24L01+ max payload bytes
 
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                      ALIASES
@@ -77,8 +76,8 @@ PayloadStruct payload;
 //                                                                                                        GEIGER COUNTER STRUCT
 
 struct GCStruct {
-  double        countsArray[max_count];     // stores each impulse as timestamps
-  double        countsArrayTemp[max_count]; // temporarily stores timestamps
+  double        countsArray[GCMAXCOUNT];     // stores each impulse as timestamps
+  double        countsArrayTemp[GCMAXCOUNT]; // temporarily stores timestamps
   char          CPM_str[16];                
   unsigned long precisionCounts;            // stores how many elements are in counts array
   unsigned long counts;                     // stores counts and resets to zero every minute
@@ -89,6 +88,7 @@ struct GCStruct {
   bool          warmup    = true;           // sets false after first 60 seconds have passed
   float         uSvh      = 0;              // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 60;             // maximum logging period in seconds.
+  unsigned long gc_warn_0 = 100;
 };
 GCStruct geigerCounter;
 
@@ -116,7 +116,7 @@ TimeStruct timeData;
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  if (geigerCounter.CPM >= 99) { display->drawString(display->getWidth()/2, 0, "WARNING");}
+  if (geigerCounter.CPM >= geigerCounter.gc_warn_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
   else {display->drawString(display->getWidth()/2, 0, String(timeData.mainLoopTimeTaken));}
   display->drawString(display->getWidth()/2, 25, "cpm");
   display->drawString(display->getWidth()/2, 13, String(geigerCounter.CPM));
@@ -315,7 +315,7 @@ void radNodeSensor0() {
   // step through the array and remove expired impulses by exluding them from our new array.
   geigerCounter.precisionCounts = 0;
   memset(geigerCounter.countsArrayTemp, 0, sizeof(geigerCounter.countsArrayTemp));
-  for (int i = 0; i < max_count; i++) {
+  for (int i = 0; i < GCMAXCOUNT; i++) {
     if (geigerCounter.countsArray[i] >= 1) { // only entertain non zero elements
     
       // compare current timestamp (per loop) to timestamps in array
@@ -457,7 +457,7 @@ void loop() {
 
 void tubeImpulseISR() {
   geigerCounter.impulse = true;
-  if (geigerCounter.countsIter < max_count) {geigerCounter.countsIter++;}
+  if (geigerCounter.countsIter < GCMAXCOUNT) {geigerCounter.countsIter++;}
   else {geigerCounter.countsIter=0;}
   geigerCounter.countsArray[geigerCounter.countsIter] = timeData.timestamp;
 }
