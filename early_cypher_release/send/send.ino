@@ -310,7 +310,6 @@ void setup() {
   radio.flush_rx();
   radio.flush_tx();
   radio.setPayloadSize(sizeof(payload)); // 2x int datatype occupy 8 bytes
-  radio.openWritingPipe(address[0][0]); // always uses pipe 0
   radio.openReadingPipe(1, address[0][1]); // using pipe 1
   radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
   radio.setDataRate(RF24_2MBPS);  // RF24_250KBPS, RF24_1MBPS, RF24_2MBPS
@@ -351,6 +350,8 @@ void radNodeSensor0() {
       memset(aes.cleartext, 0, sizeof(aes.cleartext));
       strcat(aes.cleartext, aes.fingerprint);
       strcat(aes.cleartext, "IMP");
+      // set our writing pipe each time in case we write to different pipes another time
+      radio.openWritingPipe(address[0][0]); // always uses pipe 0
       // encrypt and send
       cipherSend();
     }
@@ -395,6 +396,8 @@ void radNodeSensor0() {
       strcat(aes.cleartext, aes.fingerprint);
       strcat(aes.cleartext, "CPM");
       strcat(aes.cleartext, geigerCounter.CPM_str);
+      // set our writing pipe each time in case we write to different pipes another time
+      radio.openWritingPipe(address[0][0]); // always uses pipe 0
       // encrypt and send
       cipherSend();
     }

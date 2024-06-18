@@ -207,6 +207,20 @@ void centralCommand() {
   }
 }
 
+void radNodeSensor0() {
+  // a placeholder to remote control a sensor node.
+
+  // create transmission message
+  // memset(aes.cleartext, 0, sizeof(aes.cleartext));
+  // strcat(aes.cleartext, aes.fingerprint);
+  // strcat(aes.cleartext, "SENSOR_COMMAND");
+  // // set our writing pipe each time in case we write to different pipes another time
+  // radio.openWritingPipe(address[0][1]);    // always uses pipe 1
+  // // encrypt and send
+  // cipherSend();
+
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 void setup() {
@@ -262,7 +276,6 @@ void setup() {
   radio.flush_rx();
   radio.flush_tx();
   radio.setPayloadSize(sizeof(payload));   // 2x int datatype occupy 8 bytes
-  radio.openWritingPipe(address[0][1]);    // always uses pipe 1
   radio.openReadingPipe(1, address[0][0]); // using pipe 0
   radio.stopListening();
   radio.setChannel(124);          // 0-124 correspond to 2.4 GHz plus the channel number in units of MHz (ch 21 = 2.421 GHz)
@@ -292,4 +305,7 @@ void loop() {
       centralCommand();
     }
   }
+
+  // uncomment to communicate with a sensor node.
+  // radNodeSensor0();
 }
