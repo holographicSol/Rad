@@ -228,6 +228,11 @@ double interCurrentTime() {
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                     FUNCTION: CIPHER RECEIVE
 
+/*
+ultimately an attempt to filter out any unwanted traffic from our intended traffic so that only our intended traffic should
+reach the command center. nothing is secure but we should implement some degree(s) of security to attempt to be more secure.
+*/
+
 bool cipherReceive() {
   Serial.println("---------------------------------------------------------------------------");
 
