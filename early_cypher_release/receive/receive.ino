@@ -88,6 +88,11 @@ PayloadStruct payload;
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                        GEIGER COUNTER STRUCT
 
+/*
+what is a sensor node without anywhere to send the data? this struct is for storing information in regards to a specific sensor
+node. ideally each sensor node should have its own data struct, at least for clarity when storing data received from sensor nodes.
+*/
+
 struct GCStruct {
   signed long   CPM;           // stores counts per minute
   float         uSvh      = 0; // stores the micro-Sievert/hour for units of radiation dosing
