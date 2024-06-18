@@ -20,12 +20,12 @@ Collect and display sensor data received from remote Rad Sensor Node(s).
 #define CIPHERBLOCKSIZE     32 // limited to 32 bytes inline with NRF24L01+ max payload bytes
 
 // ----------------------------------------------------------------------------------------------------------------------------
-//                                                                                                                      ALIASES
+//                                                                                                                       WIRING
 
-SSD1306Wire display(0x3c, SDA, SCL);
-OLEDDisplayUi ui ( &display );
-RF24 radio(CE_PIN, CSN_PIN);
-AESLib aesLib;
+SSD1306Wire   display(0x3c, SDA, SCL); // let SSD1306Wire wire up our SSD1306 on the i2C bus
+OLEDDisplayUi ui(&display);            // plug display into OLEDDisplayUi
+RF24          radio(CE_PIN, CSN_PIN);  // wire up RF24 TX and RX
+AESLib        aesLib;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
