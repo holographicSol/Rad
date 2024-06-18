@@ -78,9 +78,9 @@ GCStruct geigerCounter;
 //                                                                                                                  TIME STRUCT
 
 struct TimeStruct {
-  double        previousTimestamp; // a placeholder for a previous time (optionally used)
-  unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
-  unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
+  double        previousTimestamp;
+  unsigned long mainLoopTimeTaken;
+  unsigned long mainLoopTimeStart;
   double        subTime;
   double        subTimeDivided;
   double        interTimeDivided;
@@ -88,7 +88,7 @@ struct TimeStruct {
   unsigned long currentSecond;
   double        timestamp;
   double        interTime;
-  double        previousTimestampSecond; // a placeholder for a previous time (optionally used)
+  double        previousTimestampSecond;
 };
 TimeStruct timeData;
 

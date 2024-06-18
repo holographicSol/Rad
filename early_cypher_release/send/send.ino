@@ -78,18 +78,18 @@ PayloadStruct payload;
 //                                                                                                        GEIGER COUNTER STRUCT
 
 struct GCStruct {
-  double        countsArray[max_count]; // stores each impulse as timestamps
+  double        countsArray[max_count];     // stores each impulse as timestamps
   double        countsArrayTemp[max_count]; // temporarily stores timestamps
-  char          CPM_str[16];
-  unsigned long precisionCounts; // stores how many elements are in counts array
-  unsigned long counts; // stores counts and resets to zero every minute
+  char          CPM_str[16];                
+  unsigned long precisionCounts;            // stores how many elements are in counts array
+  unsigned long counts;                     // stores counts and resets to zero every minute
   unsigned long CPM;
   unsigned long previousCPM;
   unsigned long countsIter;
-  bool          impulse   = false; // sets true each interrupt on geiger counter pin
-  bool          warmup    = true; // sets false after first 60 seconds have passed
-  float         uSvh      = 0; // stores the micro-Sievert/hour for units of radiation dosing
-  unsigned long maxPeriod = 60; // maximum logging period in seconds.
+  bool          impulse   = false;          // sets true each interrupt on geiger counter pin
+  bool          warmup    = true;           // sets false after first 60 seconds have passed
+  float         uSvh      = 0;              // stores the micro-Sievert/hour for units of radiation dosing
+  unsigned long maxPeriod = 60;             // maximum logging period in seconds.
 };
 GCStruct geigerCounter;
 
@@ -97,9 +97,9 @@ GCStruct geigerCounter;
 //                                                                                                                  TIME STRUCT
 
 struct TimeStruct {
-  double        previousTimestamp; // a placeholder for a previous time (optionally used)
-  unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
-  unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
+  double        previousTimestamp;
+  unsigned long mainLoopTimeTaken;
+  unsigned long mainLoopTimeStart;
   double        subTime;
   double        subTimeDivided;
   double        interTimeDivided;
@@ -107,7 +107,7 @@ struct TimeStruct {
   unsigned long currentSecond;
   double        timestamp;
   double        interTime;
-  double        previousTimestampSecond; // a placeholder for a previous time (optionally used)
+  double        previousTimestampSecond;
 };
 TimeStruct timeData;
 
