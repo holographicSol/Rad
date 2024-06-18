@@ -128,6 +128,11 @@ TimeStruct timeData;
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                SSD1306 FRAME: GEIGER COUNTER
 
+/*
+this method of writing to the SSD1306 as provided in the library example, refreshes the display very satisfactorily and is far
+superior to clearing parts of the screen or indeed the whole screen manually (display.cls()) prior to writing to the display.
+*/
+
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   if (geigerCounter.CPM >= geigerCounter.gc_warn_0) { display->drawString(display->getWidth()/2, 0, "WARNING");}
