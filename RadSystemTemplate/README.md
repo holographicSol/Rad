@@ -1,0 +1,1 @@
+A clean template to building a remote sensor system.
