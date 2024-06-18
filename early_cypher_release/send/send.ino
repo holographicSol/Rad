@@ -47,9 +47,9 @@ AESLib aesLib;
 //                                                                                                                 RADIO STRUCT
 
 struct RadioStruct {
-  volatile bool broadcast = true;
-  bool rf24_rx_report = false;
-  uint8_t address[1024][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
+  volatile bool broadcast        = true;
+  bool          rf24_rx_report   = false;
+  uint8_t       address[1024][6] = {"0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
 };
 RadioStruct radioData;
 
@@ -69,7 +69,7 @@ CommandServerStruct commandserver;
 // a simple struct for wireless incoming/outgoing information
 struct PayloadStruct {
   unsigned long payloadID;
-  char message[CIPHERBLOCKSIZE];
+  char          message[CIPHERBLOCKSIZE];
 };
 PayloadStruct payload;
 
@@ -77,20 +77,19 @@ PayloadStruct payload;
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                        GEIGER COUNTER STRUCT
 
-// geiger counter data
 struct GCStruct {
-  double countsArray[max_count]; // stores each impulse as timestamps
-  double countsArrayTemp[max_count]; // temporarily stores timestamps
-  bool impulse = false; // sets true each interrupt on geiger counter pin
-  bool warmup = true; // sets false after first 60 seconds have passed
-  unsigned long counts; // stores counts and resets to zero every minute
+  double        countsArray[max_count]; // stores each impulse as timestamps
+  double        countsArrayTemp[max_count]; // temporarily stores timestamps
+  char          CPM_str[16];
   unsigned long precisionCounts; // stores how many elements are in counts array
+  unsigned long counts; // stores counts and resets to zero every minute
   unsigned long CPM;
   unsigned long previousCPM;
-  char CPM_str[16];
-  float uSvh = 0; // stores the micro-Sievert/hour for units of radiation dosing
-  unsigned long maxPeriod = 60; // maximum logging period in seconds.
   unsigned long countsIter;
+  bool          impulse   = false; // sets true each interrupt on geiger counter pin
+  bool          warmup    = true; // sets false after first 60 seconds have passed
+  float         uSvh      = 0; // stores the micro-Sievert/hour for units of radiation dosing
+  unsigned long maxPeriod = 60; // maximum logging period in seconds.
 };
 GCStruct geigerCounter;
 
@@ -98,17 +97,17 @@ GCStruct geigerCounter;
 //                                                                                                                  TIME STRUCT
 
 struct TimeStruct {
-  double previousTimestamp; // a placeholder for a previous time (optionally used)
+  double        previousTimestamp; // a placeholder for a previous time (optionally used)
   unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
   unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
-  double subTime;
-  double subTimeDivided;
-  double interTimeDivided;
+  double        subTime;
+  double        subTimeDivided;
+  double        interTimeDivided;
   unsigned long currentMilliSecond;
   unsigned long currentSecond;
-  double timestamp;
-  double interTime;
-  double previousTimestampSecond; // a placeholder for a previous time (optionally used)
+  double        timestamp;
+  double        interTime;
+  double        previousTimestampSecond; // a placeholder for a previous time (optionally used)
 };
 TimeStruct timeData;
 
@@ -132,15 +131,15 @@ int frameCount = 1;
 //                                                                                                 ADVANCED ENCRYPTION STANDARD 
 
 struct AESStruct {
-  byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
-  byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
-  byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  char cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};              // half the size of ciphertext
-  char ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
-  char fingerprint[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
-  char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
-  bool fingerprintAccepted = false;
+  byte     aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
+  byte     aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
+  byte     enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  byte     dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  char     cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};              // half the size of ciphertext
+  char     ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
+  char     fingerprint[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
+  char     tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
+  bool     fingerprintAccepted = false;
   uint16_t plain_len;
   uint16_t msgLen;
 };

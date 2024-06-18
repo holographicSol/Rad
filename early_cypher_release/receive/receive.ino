@@ -38,9 +38,9 @@ int speaker_0 = 33; // for remote geiger counter impulses
 //                                                                                                                 RADIO STRUCT
 
 struct RadioStruct {
-  volatile bool broadcast = true;
-  bool rf24_rx_report = false;
-  uint8_t address[1024][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
+  volatile bool broadcast        = true;
+  bool          rf24_rx_report   = false;
+  uint8_t       address[1024][6] = {"0Node", "1Node", "2Node", "3Node", "4Node", "5Node"};
 };
 RadioStruct radioData;
 
@@ -60,17 +60,16 @@ CommandServerStruct commandserver;
 // a simple struct for wireless incoming/outgoing information
 struct PayloadStruct {
   unsigned long payloadID;
-  char message[CIPHERBLOCKSIZE];
+  char          message[CIPHERBLOCKSIZE];
 };
 PayloadStruct payload;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                        GEIGER COUNTER STRUCT
 
-// remote geiger counter sensor
 struct GCStruct {
-  signed long CPM; // stores counts per minute
-  float uSvh = 0;  // stores the micro-Sievert/hour for units of radiation dosing
+  signed long   CPM;           // stores counts per minute
+  float         uSvh      = 0; // stores the micro-Sievert/hour for units of radiation dosing
   unsigned long maxPeriod = 5; // interval between sending demo command to sensor
 };
 GCStruct geigerCounter;
@@ -79,17 +78,17 @@ GCStruct geigerCounter;
 //                                                                                                                  TIME STRUCT
 
 struct TimeStruct {
-  double previousTimestamp; // a placeholder for a previous time (optionally used)
+  double        previousTimestamp; // a placeholder for a previous time (optionally used)
   unsigned long mainLoopTimeTaken; // necessary to count time less than a second (must be updated every loop of main)
   unsigned long mainLoopTimeStart; // necessary for loop time taken (must be recorded every loop of main)
-  double subTime;
-  double subTimeDivided;
-  double interTimeDivided;
+  double        subTime;
+  double        subTimeDivided;
+  double        interTimeDivided;
   unsigned long currentMilliSecond;
   unsigned long currentSecond;
-  double timestamp;
-  double interTime;
-  double previousTimestampSecond; // a placeholder for a previous time (optionally used)
+  double        timestamp;
+  double        interTime;
+  double        previousTimestampSecond; // a placeholder for a previous time (optionally used)
 };
 TimeStruct timeData;
 
@@ -112,15 +111,15 @@ int frameCount = 1;
 //                                                                                                 ADVANCED ENCRYPTION STANDARD 
 
 struct AESStruct {
-  byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
-  byte aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
-  byte enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  byte dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
-  char cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};              // half the size of ciphertext
-  char ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
-  char fingerprint[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
-  char tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
-  bool fingerprintAccepted = false;
+  byte     aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
+  byte     aes_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // genreral initialization vector (use your own)
+  byte     enc_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  byte     dec_iv[16]  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // iv_block gets written to
+  char     cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)] = {0};              // half the size of ciphertext
+  char     ciphertext[CIPHERBLOCKSIZE] = {0};                                // twice the size of cleartext
+  char     fingerprint[(unsigned long)(CIPHERBLOCKSIZE/2)];                  // a recognizable tag 
+  char     tmp_cleartext[(unsigned long)(CIPHERBLOCKSIZE/2)];                // the same size of cleartext
+  bool     fingerprintAccepted = false;
   uint16_t plain_len;
   uint16_t msgLen;
 };
