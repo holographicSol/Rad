@@ -6,7 +6,6 @@ Collect and display sensor data received from remote Rad Sensor Node(s).
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                    LIBRARIES
 
-#include <SPI.h>
 #include <RF24.h>          // RF24                                       http://nRF24.github.io/RF24
 #include <SSD1306Wire.h>   // SSD1306Wire                                https://gitlab.com/alexpr0/ssd1306wire
 #include <OLEDDisplayUi.h> // ESP8266 and ESP32 OLED driver for SSD1306  https://github.com/ThingPulse/esp8266-oled-ssd1306
