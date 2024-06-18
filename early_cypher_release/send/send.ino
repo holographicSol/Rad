@@ -44,7 +44,12 @@ RadioStruct radioData;
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                        COMMAND SERVER STRUCT
 
-// reaching message command requieres getting through security, consider nothing as secure
+/*
+incoming payloads if accepted are parsed before finally reaching message command. this is the last stop for payload values
+trying to reach central command. for clarity, these values are intentionally seperate from other data structures and any values
+reaching this struct should be properly tested first, for security reasons so that we can try to secure and own central command. 
+*/
+
 struct CommandServerStruct {
   char messageCommand[(unsigned long)(CIPHERBLOCKSIZE/2)];
   char messageValue[(unsigned long)(CIPHERBLOCKSIZE/2)];
