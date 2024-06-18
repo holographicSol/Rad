@@ -476,11 +476,11 @@ void setup() {
 
 void loop() {
 
+  // store current time to measure this loop time
+  timeData.mainLoopTimeStart = micros();
+
   // ----------------------------------------------------------------------------------------------------------------------------
   //                                                                                     COLLECT AND PROCESS RECEIVED SENSOR DATA
-
-  // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
-  timeData.mainLoopTimeStart = micros();
 
   // default to rx each loop
   radio.openReadingPipe(1, radioData.address[0][0]);
@@ -507,7 +507,7 @@ void loop() {
 
   // ----------------------------------------------------------------------------------------------------------------------------
 
-  // refresh ssd1306 128x64 display
+  // refresh SSD1306 128x64 display
   ui.update();
 
   // store time taken to complete

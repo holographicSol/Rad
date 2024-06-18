@@ -486,7 +486,7 @@ void setup() {
 
 void loop() {
 
-  // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
+  // store current time to measure this loop time
   timeData.mainLoopTimeStart = micros();
 
   // ----------------------------------------------------------------------------------------------------------------------------
@@ -516,7 +516,7 @@ void loop() {
   // get sensor information and send the results
   radNodeSensor0();
 
-  // refresh ssd1306 128x64 display
+  // refresh SSD1306 128x64 display
   ui.update();
 
   // store time taken to complete
