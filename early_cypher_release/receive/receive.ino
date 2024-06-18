@@ -151,6 +151,38 @@ bool cipherReceive() {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+void cipherSend() {
+  Serial.println("---------------------------------------------------------------------------");
+
+  // keep payloadID well withing its cast
+  payload.payloadID++;
+  // limit to an N digit number so we always know how many bytes we have left in the payload
+  if (payload.payloadID > 9) {payload.payloadID = 0;}
+
+  // display raw payload
+  Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
+  Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext);
+  Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
+
+  // encrypt and load the encrypted data into the payload
+  encrypt((char*)aes.cleartext, aes.enc_iv);
+  memset(payload.message, 0, sizeof(payload.message));
+  memcpy(payload.message, aes.ciphertext, sizeof(aes.ciphertext));
+
+  // display payload information after encryption
+  Serial.print("[payload.message]        "); Serial.println(payload.message); 
+  Serial.print("[Bytes(aes.ciphertext)]  "); Serial.println(strlen(aes.ciphertext));
+
+  // send
+  Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
+  radio.write(&payload, sizeof(payload));
+  // uncomment to test immediate replay attack
+  // delay(1000);
+  // radio.write(&payload, sizeof(payload));
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 void centralCommand() {
   // compare message command to known commands. we can only trust the central command as much as we can trust message command,
   // which is the reason for encryption and inner message fingerprinting.
@@ -254,10 +286,8 @@ void loop() {
   // get payload
   uint8_t pipe;
   if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
-
     // go through security
     if (cipherReceive() == true) {
-
       // go to central command
       centralCommand();
     }

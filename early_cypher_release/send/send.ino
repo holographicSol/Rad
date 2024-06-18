@@ -28,7 +28,7 @@
 #define CE_PIN           25 // radio can use tx
 #define CSN_PIN          26 // radio can use rx
 #define GEIGER_PIN       27
-#define CIPHERBLOCKSIZE 32 // limited to 32 bytes inline with NRF24L01+ max payload bytes
+#define CIPHERBLOCKSIZE  32 // limited to 32 bytes inline with NRF24L01+ max payload bytes
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -43,6 +43,16 @@ AESLib aesLib;
 volatile bool broadcast = true;
 // Radio Addresses
 uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
+bool fingerprintAccepted = false;
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+// reaching message command requieres getting through security, consider nothing as secure
+struct CommandServerStruct {
+  char messageCommand[(unsigned long)(CIPHERBLOCKSIZE/2)];
+  char messageValue[(unsigned long)(CIPHERBLOCKSIZE/2)];
+};
+CommandServerStruct commandserver;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -52,6 +62,7 @@ struct PayloadStruct {
   char message[CIPHERBLOCKSIZE];
 };
 PayloadStruct payload;
+
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -172,6 +183,50 @@ void tubeImpulseISR() {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+bool cipherReceive() {
+  Serial.println("---------------------------------------------------------------------------");
+
+  // ensure false
+  fingerprintAccepted = false;
+
+  // read the payload into payload struct
+  uint8_t bytes = radio.getPayloadSize();
+
+  // check payload size within limit
+  if (bytes <= sizeof(payload)) {
+    
+    // read the payload into the payload struct
+    memset(payload.message, 0, sizeof(payload.message));
+    radio.read(&payload, bytes); // fetch payload from FIFO
+
+    // display raw payload
+    Serial.print("[payload.payloadID]      "); Serial.println(payload.payloadID);
+    Serial.print("[payload.message]        "); Serial.println(payload.message); 
+    Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
+
+    // deccrypt (does not matter if not encrypted because we are only interested in encrypted payloads. turn anything else to junk)
+    decrypt((char*)payload.message, aes.dec_iv);
+
+    // if accepted fingerprint 
+    if ((strncmp(aes.cleartext, aes.fingerprint, strlen(aes.fingerprint)-1 )) == 0) {
+      fingerprintAccepted = true;
+
+      // seperate fingerprint from the rest of the payload message ready for command parse
+      memset(commandserver.messageCommand, 0, sizeof(commandserver.messageCommand));
+      strncpy(commandserver.messageCommand, aes.cleartext + strlen(aes.fingerprint), strlen(aes.cleartext) - strlen(aes.fingerprint));
+      Serial.print("[Command]                "); Serial.println(commandserver.messageCommand);
+    }
+
+    // display payload information after decryption
+    Serial.print("[aes.cleartext]          "); Serial.println(aes.cleartext); 
+    Serial.print("[Bytes(aes.cleartext)]   "); Serial.println(strlen(aes.cleartext));
+    Serial.print("[fingerprint]            "); Serial.println(fingerprintAccepted);
+  }
+  return fingerprintAccepted;
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 void cipherSend() {
   Serial.println("---------------------------------------------------------------------------");
 
@@ -200,6 +255,14 @@ void cipherSend() {
   // uncomment to test immediate replay attack
   // delay(1000);
   // radio.write(&payload, sizeof(payload));
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+void centralCommand() {
+  // compare message command to known commands. we can only trust the central command as much as we can trust message command,
+  // which is the reason for encryption and inner message fingerprinting.
+  // add any commands intended to be received from any nodes here below:
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -344,6 +407,16 @@ void loop() {
 
   // store current time to measure this loop time so we know how quickly items are added/removed from counts arrays
   timeData.mainLoopTimeStart = micros();
+
+  // optionally receive (this is the rad sensor node, uncomment if you need to remotely control this sensor.
+  // uint8_t pipe;
+  // if (radio.available(&pipe)) { // is there a payload? get the pipe number that recieved it
+  //   // go through security
+  //   if (cipherReceive() == true) {
+  //     // go to central command
+  //     centralCommand();
+  //   }
+  // }
 
   // get sensor information
   radNodeSensor0();
