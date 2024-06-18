@@ -346,7 +346,10 @@ void centralCommand() {
 
 void radNodeSensor0() {
   
-  // this setup is for measuring cpm by monitoring the radiationD-v1.0 (CAJOE) for impulses
+  /*
+  this sensor node is setup for measuring cpm by monitoring the radiationD-v1.0 (CAJOE) for impulses. although this function
+  could be harvesting other sensor information if building a different sensor node.
+  */
 
   // set current timestamp to be used this loop same millisecond+- depending on loop speed.
   timeData.timestamp = currentTime();
