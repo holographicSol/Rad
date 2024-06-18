@@ -299,7 +299,7 @@ void radNodeSensor0() {
     // set our writing pipe each time in case we write to different pipes another time
     radio.stopListening();
     radio.flush_tx();
-    radio.openWritingPipe(radioData.address[0][1]);    // always uses pipe 1
+    radio.openWritingPipe(radioData.address[0][1]);
     // encrypt and send
     cipherSend();
   }
@@ -382,7 +382,7 @@ void loop() {
   timeData.mainLoopTimeStart = micros();
 
   // default to rx each loop
-  radio.openReadingPipe(1, radioData.address[0][0]); // using pipe 0
+  radio.openReadingPipe(1, radioData.address[0][0]);
   radio.startListening();
   // get payload
   uint8_t pipe;

@@ -20,6 +20,7 @@ Collect, display and send sensor data to the Rad Command Server.
 
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                      DEFINES
+
 /*
 memory limitations require counts log max.
 on esp32 a maxcount of 100 should mean main loop time will be half the time of main loop time with max count 10240.
@@ -28,6 +29,7 @@ is reacting to a precise cpm reading within the shortest time you can. if instea
 precise (arduino is not medical/military grade) a reading as you can at any level of activity then you may increase
 max count from 10240 providing you beleive there is the memory and performance available on the MCU your building for.
 */
+
 #define max_count       100
 #define warning_level_0  99 // warn at this cpm 
 #define CE_PIN           25 // radio can use tx
@@ -308,7 +310,7 @@ void radNodeSensor0() {
       // set our writing pipe each time in case we write to different pipes another time
       radio.stopListening();
       radio.flush_tx();
-      radio.openWritingPipe(radioData.address[0][0]); // always uses pipe 0
+      radio.openWritingPipe(radioData.address[0][0]);
       // encrypt and send
       cipherSend();
     }
@@ -351,7 +353,7 @@ void radNodeSensor0() {
       // set our writing pipe each time in case we write to different pipes another time
       radio.stopListening();
       radio.flush_tx();
-      radio.openWritingPipe(radioData.address[0][0]); // always uses pipe 0
+      radio.openWritingPipe(radioData.address[0][0]);
       // encrypt and send
       cipherSend();
     }
@@ -431,7 +433,7 @@ void loop() {
 
   // default to rx each loop (optional because this is a sensor node and does not have to receive but it can)
   // uncomment to enable this node to receive commands (for security reasons you may desire your sensor node to only tx)
-  radio.openReadingPipe(1, radioData.address[0][1]); // using pipe 0
+  radio.openReadingPipe(1, radioData.address[0][1]);
   radio.startListening();
   // get payload
   uint8_t pipe;
