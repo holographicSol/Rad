@@ -202,6 +202,12 @@ void decrypt(char * msg, byte iv[]) {
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                       FUNCTION: CURRENT TIME
 
+/*
+this function intends to return a timestamp. note that the timestamp returned is not intended to be datetime but instead an
+accumulation of micros from the point at which the main loop stated running. this proved to be faster than requesting datetime
+as a timestamp from an rtc in which would also need to be appended with some unit of sub second time to get the most out of it.  
+*/
+
 double currentTime() {
   if (timeData.subTime >= 1000) {
       timeData.subTime = 0;
@@ -218,6 +224,10 @@ double currentTime() {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                  FUNCTION: INTERMEDIATE TIME
+
+/*
+a time between times function that can be used to create a timestamp related to current and time without setting current time.
+*/
 
 double interCurrentTime() {
   timeData.interTime = (micros() - timeData.mainLoopTimeStart);
