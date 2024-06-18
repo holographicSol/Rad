@@ -373,7 +373,7 @@ void centralCommand() {
 //                                                                                                     FUNCTION: COMMAND A NODE
 
 /*
-send commands to a remote sensor node. naturally we wish to receive information from our remote sensor node and this function is
+send commands to a remote sensor node. naturally we wish to receive information from our remote sensor node and this function
 demonstrates that we are also setup to transmit to those nodes in the same way they can transmit to us. it may not always be
 desirable to have a sensor node setup to receive, however we would like this setup to provide that capability by simply
 uncommenting the receiver block in the sensor nodes main loop so that we can easily make that sensor remotely responsive if the
