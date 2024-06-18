@@ -29,8 +29,8 @@ AESLib        aesLib;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-int led_red   = 32; // rgb led, 32 red, 2 blue, 4 green. for remote geiger counter impulses
-int speaker_0 = 33; // for remote geiger counter impulses
+int REDLED_0 = 32; // rgb led:  32 red,  2 blue,  4 green.
+int SOUND_0  = 33;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                                 RADIO STRUCT
@@ -263,12 +263,12 @@ void centralCommand() {
 
   // geiger counter impulse
   if (strncmp( commandserver.messageCommand, "IMP", 3) == 0) {
-    digitalWrite(speaker_0, HIGH);
-    digitalWrite(speaker_0, HIGH);
-    digitalWrite(led_red, HIGH);
+    digitalWrite(SOUND_0, HIGH);
+    digitalWrite(SOUND_0, HIGH);
+    digitalWrite(REDLED_0, HIGH);
     delay(3);
-    digitalWrite(led_red, LOW);
-    digitalWrite(speaker_0, LOW);
+    digitalWrite(REDLED_0, LOW);
+    digitalWrite(SOUND_0, LOW);
   }
 
   // geiger counter cpm
@@ -335,10 +335,10 @@ void setup() {
   // --------------------------------------------------------------------------------------------------------------------------
   //                                                                                                       SETUP GEIGER COUNTER
 
-  pinMode(led_red, OUTPUT);
-  pinMode(speaker_0, OUTPUT);
-  digitalWrite(speaker_0, LOW);
-  digitalWrite(led_red, LOW);
+  pinMode(REDLED_0, OUTPUT);
+  pinMode(SOUND_0, OUTPUT);
+  digitalWrite(SOUND_0, LOW);
+  digitalWrite(REDLED_0, LOW);
 
   // --------------------------------------------------------------------------------------------------------------------------
   //                                                                                                                  SETUP AES
