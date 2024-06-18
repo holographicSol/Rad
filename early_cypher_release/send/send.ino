@@ -44,6 +44,7 @@ volatile bool broadcast = true;
 // Radio Addresses
 uint8_t address[][6] = { "0Node", "1Node", "2Node", "3Node", "4Node", "5Node" };
 bool fingerprintAccepted = false;
+bool rf24_rx_report = false;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -253,7 +254,9 @@ void cipherSend() {
 
   // send
   Serial.print("[Bytes(payload.message)] "); Serial.println(strlen(payload.message));
-  radio.write(&payload, sizeof(payload));
+  rf24_rx_report = false;
+  rf24_rx_report = radio.write(&payload, sizeof(payload));
+  Serial.print("[Payload Delivery]       "); Serial.println(rf24_rx_report);
   // uncomment to test immediate replay attack
   // delay(1000);
   // radio.write(&payload, sizeof(payload));
