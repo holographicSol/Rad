@@ -59,7 +59,11 @@ CommandServerStruct commandserver;
 // ----------------------------------------------------------------------------------------------------------------------------
 //                                                                                                               PAYLOAD STRUCT
 
-// a simple struct for wireless incoming/outgoing information
+/*
+the first and last stop for any incoming / outgoing data over RF24 and could be used for structuring data to be sent / received
+by other means, for consistent data structuring in relation to incoming / outgoing traffic accross all entrances and exits. 
+*/
+
 struct PayloadStruct {
   unsigned long payloadID;
   char          message[CIPHERBLOCKSIZE];
