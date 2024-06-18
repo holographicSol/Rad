@@ -57,7 +57,8 @@ SoundStruct soundData;
 
 /*
 organize radio related data into one place. note that payload data although related, is intentionally a seperate struct because
-the payload struct is actually intended to be sent and received in entirety through any entrances and exits to be digestable. 
+the payload struct is actually intended to be sent and received in entirety through any entrances and exits to be more easily
+digestable on either end, while this radio struct is simply for organizing various radio related data. 
 */
 
 struct RadioStruct {
