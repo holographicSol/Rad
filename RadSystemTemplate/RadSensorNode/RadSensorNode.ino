@@ -423,7 +423,7 @@ void loop() {
   timeData.mainLoopTimeStart = micros();
 
   // ----------------------------------------------------------------------------------------------------------------------------
-  //                                                                                              OPTIONAL RESPONSIVE SENSOR NODE
+  //                                                                                                           OPTIONALLY RECEIVE
 
   /*
   optional because this is a sensor node does not have to receive but it can). for security reasons you may desire your sensor
@@ -444,7 +444,7 @@ void loop() {
   }
 
   // ----------------------------------------------------------------------------------------------------------------------------
-  //                                                                                             COLLECT AND TRANSMIT SENSOR DATA
+  //                                                                                                           OPTIONALLY COMMAND
 
   // get sensor information and send the results
   sensorZero();
