@@ -2,6 +2,7 @@
 // Collect and display sensor data received from remote Rad Sensor Node(s).
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                                    LIBRARIES
 
 #include <printf.h>
 #include <SPI.h>
@@ -11,6 +12,7 @@
 #include <AESLib.h>
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                                      DEFINES
 
 #define gc_warning_level_0  99 // warn if remote geiger counter reaches this cpm
 #define CE_PIN              25 // radio can use tx
@@ -18,6 +20,7 @@
 #define CIPHERBLOCKSIZE     32 // limited to 32 bytes inline with NRF24L01+ max payload bytes
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                                      ALIASES
 
 SSD1306Wire display(0x3c, SDA, SCL);
 OLEDDisplayUi ui ( &display );
@@ -30,6 +33,7 @@ int led_red   = 32; // rgb led, 32 red, 2 blue, 4 green. for remote geiger count
 int speaker_0 = 33; // for remote geiger counter impulses
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                                 RADIO STRUCT
 
 struct RadioStruct {
   volatile bool broadcast = true;
@@ -39,6 +43,7 @@ struct RadioStruct {
 RadioStruct radioData;
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                        COMMAND SERVER STRUCT
 
 // reaching message command requieres getting through security, consider nothing as secure
 struct CommandServerStruct {
@@ -48,6 +53,7 @@ struct CommandServerStruct {
 CommandServerStruct commandserver;
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                               PAYLOAD STRUCT
 
 // a simple struct for wireless incoming/outgoing information
 struct PayloadStruct {
@@ -57,6 +63,7 @@ struct PayloadStruct {
 PayloadStruct payload;
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                        GEIGER COUNTER STRUCT
 
 // remote geiger counter sensor
 struct GCStruct {
@@ -67,6 +74,7 @@ struct GCStruct {
 GCStruct geigerCounter;
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                                  TIME STRUCT
 
 struct TimeStruct {
   double previousTimestamp; // a placeholder for a previous time (optionally used)
@@ -84,6 +92,7 @@ struct TimeStruct {
 TimeStruct timeData;
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                   OLED FRAME: GEIGER COUNTER
 
 // frame to be displayed on ssd1306 182x64
 void GC_Measurements(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -98,6 +107,7 @@ FrameCallback frames[] = { GC_Measurements }; // array keeps function pointers t
 int frameCount = 1;
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                 ADVANCED ENCRYPTION STANDARD 
 
 struct AESStruct {
   byte aes_key[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // AES encryption key (use your own)
@@ -131,6 +141,7 @@ void decrypt(char * msg, byte iv[]) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                       FUNCTION: CURRENT TIME
 
 double currentTime() {
   if (timeData.subTime >= 1000) {
@@ -147,6 +158,7 @@ double currentTime() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                  FUNCTION: INTERMEDIATE TIME
 
 double interCurrentTime() {
   timeData.interTime = (micros() - timeData.mainLoopTimeStart);
@@ -155,6 +167,7 @@ double interCurrentTime() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                     FUNCTION: CIPHER RECEIVE
 
 bool cipherReceive() {
   Serial.println("---------------------------------------------------------------------------");
@@ -200,6 +213,7 @@ bool cipherReceive() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                        FUNCTION: CIPHER SEND
 
 void cipherSend() {
   Serial.println("---------------------------------------------------------------------------");
@@ -235,6 +249,7 @@ void cipherSend() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                            FUNCTION: CENTCOM
 
 void centralCommand() {
   // compare message command to known commands. we can only trust the central command as much as we can trust message command,
@@ -261,6 +276,7 @@ void centralCommand() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                     FUNCTION: GEIGER COUNTER
 
 void radNodeSensor0() {
   // a demo function to remote control / send data to a sensor node.
@@ -287,19 +303,20 @@ void radNodeSensor0() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                              FUNCTION: SETUP
 
 void setup() {
 
   // --------------------------------------------------------------------------------------------------------------------------
+  //                                                                                                              SETUP SERIAL
 
-  // setup serial
   Serial.begin(115200);
   while (!Serial) {
   }
 
   // --------------------------------------------------------------------------------------------------------------------------
+  //                                                                                                              SETUP DISPLAY
 
-  // setup display
   display.init();
   ui.setTargetFPS(60);
   ui.disableAllIndicators();
@@ -311,16 +328,16 @@ void setup() {
   display.println("starting..");
 
   // --------------------------------------------------------------------------------------------------------------------------
+  //                                                                                                       SETUP GEIGER COUNTER
 
-  // setup geiger counter
   pinMode(led_red, OUTPUT);
   pinMode(speaker_0, OUTPUT);
   digitalWrite(speaker_0, LOW);
   digitalWrite(led_red, LOW);
 
   // --------------------------------------------------------------------------------------------------------------------------
+  //                                                                                                                  SETUP AES
 
-  // setup aes
   aes_init();
   /*
   fingerprint is to better know if we decrypted anything correctly and can also be used for ID. consider the following wit
@@ -332,8 +349,8 @@ void setup() {
   strcpy(aes.fingerprint, "iD:");
 
   // --------------------------------------------------------------------------------------------------------------------------
+  //                                                                                                                SETUP RADIO
 
-  // setup radio
   if (!radio.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
     while (1) {}
@@ -354,6 +371,7 @@ void setup() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+//                                                                                                                    MAIN LOOP
 
 void loop() {
 
