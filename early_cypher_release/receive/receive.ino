@@ -306,6 +306,6 @@ void loop() {
     }
   }
 
-  // uncomment to communicate with a sensor node.
+  // uncomment to command a sensor node.
   // radNodeSensor0();
 }
