@@ -142,7 +142,7 @@ int frameCount = 1;
 we would like to have some confidence that the data we are receiving is the data we intend to be receiving, although nothing is
 secure, we should implement some degree(s) of security to try and secure our systems. a good place to start is encryption. the
 intention here is to obfuscate commands and the fingerprint with encryption so that when we decrypt a payload, we can check for
-a known fingerprint inside and if ther is then we can further process the payload, helping us try to secure the command center. 
+a known fingerprint inside and if there is then we can further process the payload, helping us try to secure the command center. 
 */
 
 struct AESStruct {
