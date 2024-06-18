@@ -10,7 +10,7 @@ AES 128 encrypted transmissions between the command server and sensor nodes.
 
 ---
 
-Sensor nodes can easily be in one of three modes: (1) Transmit only, (2) Receive only (3) Transmit and receive.
+Sensor nodes can easily be in one of three modes at compile time: (1) Transmit only, (2) Receive only (3) Transmit and receive.
 
 ---
 
