@@ -4,7 +4,7 @@
 
 ---
 
-A system for wireless sensors.
+# A system for wireless sensors.
 
 ---
 
@@ -20,7 +20,7 @@ Sensor nodes can easily be in one of three modes at compile time: (1) Transmit o
 
 ---
 
-Requirements:
+# Requirements:
 
 2x KEYESTUDIO ESP32 WROOM Development Board
 
