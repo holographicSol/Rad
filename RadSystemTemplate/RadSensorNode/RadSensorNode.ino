@@ -379,9 +379,10 @@ void setup() {
 
   aes_init();
   /*
-  fingerprint is to better know if we decrypted anything correctly and can also be used for ID. consider the following wit
-  NRF24L01+ max 32 bytes payload to understand a trade off between fingerprint strength and data size, understanding that
-  the larger the fingerprint, the less the data and vis versa without compression, payload chunking etc.: 
+  fingerprint is to better know if we decrypted anything correctly and can also be used for ID. consider the following with
+  NRF24L01+ max 32 bytes payload and our payload message will double in size once encrypted, meaning we have <=16 bytes available
+  for our payload message. there is a trade off between fingerprint strength and data size, the larger the fingerprint, the less
+  the data and vis versa without payload chunking or another solution: 
                   1         +          3           +         12
           1byte (payloadID) + Nbytes (fingerprint) + remaining bytes (data)
   */
